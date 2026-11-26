@@ -253,6 +253,11 @@ docker compose -f docker-compose.prod.yml exec -T db pg_dump -U arah arah | gzip
 
 Mise à jour : `git pull && docker compose -f docker-compose.prod.yml up -d --build` (les migrations s'appliquent au démarrage).
 
+### Pour tester : site sur Vercel, API sur ta machine
+
+Le site peut être publié sur Vercel pendant que l'API tourne sur ta machine, exposée par ngrok. La marche à suivre
+est dans [docs/vercel-ngrok.md](docs/vercel-ngrok.md).
+
 ## Architecture
 
 ```

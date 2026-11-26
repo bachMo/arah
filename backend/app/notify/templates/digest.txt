@@ -1,0 +1,10 @@
+{{ items|length }} opportunité{{ 's' if items|length > 1 }} pour {{ name or 'toi' }} ({{ period }})
+
+{% for item in items %}
+[{{ item.score }}/100] {{ item.title }}
+{{ item.issuer }}{% if item.deadline %} · {{ item.deadline }}{% endif %}
+{{ item.url }}
+
+{% endfor %}
+Ton radar : {{ radar_url }}
+Ne plus recevoir ces alertes : {{ unsubscribe_url }}

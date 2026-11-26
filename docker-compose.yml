@@ -1,0 +1,63 @@
+# Environnement de développement : base de données, e-mails de test, API et site avec rechargement à chaud.
+#   docker compose up --build
+# Site : http://localhost:5173 · API : http://localhost:8000/api/docs · E-mails : http://localhost:8025
+
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-arah}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-arah}
+      POSTGRES_DB: ${POSTGRES_DB:-arah}
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-arah} -d ${POSTGRES_DB:-arah}"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+
+  mailpit:
+    image: axllent/mailpit:latest
+    ports:
+      - "8025:8025"
+      - "1025:1025"
+
+  api:
+    build:
+      context: ./backend
+      target: dev
+    env_file: .env
+    environment:
+      DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-arah}:${POSTGRES_PASSWORD:-arah}@db:5432/${POSTGRES_DB:-arah}
+      EMAIL_BACKEND: smtp
+      SMTP_HOST: mailpit
+      SMTP_PORT: "1025"
+      SMTP_SECURITY: none
+    volumes:
+      - ./backend:/app
+      - /app/.venv
+    ports:
+      - "8000:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+
+  web:
+    image: node:22-alpine
+    working_dir: /app
+    command: sh -c "npm ci && npm run dev -- --host 0.0.0.0"
+    environment:
+      VITE_API_PROXY: http://api:8000
+    volumes:
+      - ./web:/app
+      - /app/node_modules
+    ports:
+      - "5173:5173"
+    depends_on:
+      - api
+
+volumes:
+  pgdata:

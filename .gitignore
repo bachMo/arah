@@ -1,0 +1,22 @@
+# Environnement
+.env
+.env.*
+!.env.example
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+.pytest_cache/
+.ruff_cache/
+*.egg-info/
+
+# Node
+node_modules/
+dist/
+
+# Divers
+.DS_Store
+*.log
+.idea/
+.vscode/

@@ -1,0 +1,8 @@
+Nouveau mot de passe
+
+Pour choisir un nouveau mot de passe, ouvre ce lien (valable 2 heures, une seule fois) :
+{{ action_url }}
+
+Si tu n'es pas à l'origine de cette demande, ignore ce message.
+
+— {{ app_name }}

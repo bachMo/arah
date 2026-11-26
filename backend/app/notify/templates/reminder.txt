@@ -1,0 +1,7 @@
+{{ headline }}
+
+{% for line in lines %}{{ line }}
+{% endfor %}
+{{ action_label }} : {{ action_url }}
+
+— {{ app_name }}

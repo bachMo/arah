@@ -1,0 +1,8 @@
+{% extends "_base.html" %}
+{% block preheader %}Confirme ton adresse pour recevoir tes alertes.{% endblock %}
+{% block content %}
+<h1 style="margin:0 0 12px;font-size:24px;line-height:30px;">Bienvenue{% if name %}, {{ name }}{% endif %} !</h1>
+<p style="margin:0;font-size:15px;line-height:24px;color:#4A4236;">Confirme ton adresse e-mail pour que l'agent puisse t'envoyer les opportunités qui te correspondent.</p>
+{% with url=action_url, label="Confirmer mon adresse" %}{% include "_button.html" %}{% endwith %}
+<p style="margin:16px 0 0;font-size:13px;line-height:20px;color:#857A69;">Ce lien est valable 48 heures. Si tu n'as pas créé de compte, ignore simplement ce message.</p>
+{% endblock %}

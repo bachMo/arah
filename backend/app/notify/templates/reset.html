@@ -1,0 +1,8 @@
+{% extends "_base.html" %}
+{% block preheader %}Choisis un nouveau mot de passe.{% endblock %}
+{% block content %}
+<h1 style="margin:0 0 12px;font-size:24px;line-height:30px;">Nouveau mot de passe</h1>
+<p style="margin:0;font-size:15px;line-height:24px;color:#4A4236;">Tu as demandé à réinitialiser ton mot de passe. Clique sur le bouton pour en choisir un nouveau.</p>
+{% with url=action_url, label="Choisir un mot de passe" %}{% include "_button.html" %}{% endwith %}
+<p style="margin:16px 0 0;font-size:13px;line-height:20px;color:#857A69;">Ce lien est valable 2 heures et ne fonctionne qu'une fois. Si tu n'es pas à l'origine de cette demande, ignore ce message : ton mot de passe reste inchangé.</p>
+{% endblock %}

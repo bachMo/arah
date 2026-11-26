@@ -1,0 +1,22 @@
+{% extends "_base.html" %}
+{% block preheader %}{{ items|length }} opportunité{{ 's' if items|length > 1 }} pour toi, dont « {{ items[0].title }} ».{% endblock %}
+{% block content %}
+<p style="margin:0 0 6px;font-size:12px;letter-spacing:1.5px;text-transform:uppercase;color:#FF4F1F;font-weight:700;">Arah! · {{ period }}</p>
+<h1 style="margin:0 0 8px;font-size:24px;line-height:30px;">{{ items|length }} opportunité{{ 's' if items|length > 1 }} pour {{ name or 'toi' }}</h1>
+<p style="margin:0 0 20px;font-size:15px;line-height:24px;color:#4A4236;">L'agent a parcouru {{ sources_count }} source{{ 's' if sources_count > 1 }} et retenu celles qui correspondent le mieux à ton profil.</p>
+{% for item in items %}
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 12px;border:1px solid #E9E0D0;border-radius:14px;">
+<tr>
+<td width="64" valign="top" style="padding:16px 0 16px 16px;">
+  <div style="width:48px;height:48px;border-radius:24px;background:{{ item.color }};color:#FFFDF8;font-weight:800;font-size:17px;line-height:48px;text-align:center;">{{ item.score }}</div>
+</td>
+<td valign="top" style="padding:14px 16px 14px 10px;">
+  <a href="{{ item.url }}" style="color:#17140F;text-decoration:none;font-weight:700;font-size:15px;line-height:21px;">{{ item.title }}</a>
+  <div style="margin-top:4px;font-size:13px;line-height:19px;color:#857A69;">{{ item.issuer }}{% if item.deadline %} · <span style="color:{{ '#D23A0E' if item.urgent else '#857A69' }};font-weight:{{ '700' if item.urgent else '400' }};">{{ item.deadline }}</span>{% endif %}</div>
+  {% if item.reason %}<div style="margin-top:6px;font-size:13px;line-height:19px;color:#4A4236;">{{ item.reason }}</div>{% endif %}
+</td>
+</tr>
+</table>
+{% endfor %}
+{% with url=radar_url, label="Ouvrir mon radar" %}{% include "_button.html" %}{% endwith %}
+{% endblock %}

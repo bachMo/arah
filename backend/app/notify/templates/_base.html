@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light only">
+<title>{{ subject }}</title>
+</head>
+<body style="margin:0;padding:0;background:#F4EFE6;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#17140F;">
+<div style="display:none;max-height:0;overflow:hidden;">{% block preheader %}{% endblock %}</div>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#F4EFE6;">
+<tr><td align="center" style="padding:32px 16px;">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:600px;">
+    <tr><td style="padding:0 4px 20px;">
+      <a href="{{ public_url }}" style="text-decoration:none;color:#17140F;font-size:24px;font-weight:800;letter-spacing:-0.5px;">arah<span style="color:#FF4F1F;">!</span></a>
+    </td></tr>
+    <tr><td style="background:#FFFDF8;border-radius:20px;padding:32px 28px;border:1px solid #E9E0D0;">
+      {% block content %}{% endblock %}
+    </td></tr>
+    <tr><td style="padding:22px 6px;font-size:12px;line-height:18px;color:#857A69;">
+      {{ app_name }} est une plateforme gratuite et open source de veille d'appels d'offres et de financements, qui vit grâce aux dons.
+      <a href="{{ public_url }}/soutenir" style="color:#857A69;">Soutenir le projet</a> ·
+      <a href="{{ github_url }}" style="color:#857A69;">Code source</a>
+      {% if unsubscribe_url %}<br><a href="{{ unsubscribe_url }}" style="color:#857A69;">Ne plus recevoir ces alertes</a> · <a href="{{ public_url }}/reglages" style="color:#857A69;">Régler mes alertes</a>{% endif %}
+    </td></tr>
+  </table>
+</td></tr>
+</table>
+</body>
+</html>

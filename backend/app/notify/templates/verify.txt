@@ -1,0 +1,8 @@
+Bienvenue{% if name %}, {{ name }}{% endif %} !
+
+Confirme ton adresse e-mail pour recevoir tes alertes :
+{{ action_url }}
+
+Ce lien est valable 48 heures. Si tu n'as pas créé de compte, ignore ce message.
+
+— {{ app_name }}

@@ -281,7 +281,7 @@ export function Home() {
                 <ButtonLink to="/soutenir" variant="signal" icon={<HeartHandshake />}>
                   Soutenir Arah!
                 </ButtonLink>
-                <a className="btn btn-ghost" href={config?.github_url ?? "#"} target="_blank" rel="noreferrer">
+                <a className="btn btn-ghost" href={config?.github_url ?? "https://github.com/bachMo/arah"} target="_blank" rel="noreferrer">
                   <GithubIcon /> Voir le code
                 </a>
               </div>

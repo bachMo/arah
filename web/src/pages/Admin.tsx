@@ -136,8 +136,8 @@ export default function Admin() {
                       <tr key={s.id}>
                         <td>
                           <strong>{s.name}</strong>
-                          <div className="tiny muted">{s.url || s.slug}</div>
-                          {s.last_status === "error" && <div className="tiny" style={{ color: "#b42318" }}>{s.last_message.slice(0, 140)}</div>}
+                          <div className="tiny muted cell-wrap">{s.url || s.slug}</div>
+                          {s.last_status === "error" && <div className="tiny cell-wrap" style={{ color: "#b42318" }}>{s.last_message.slice(0, 140)}</div>}
                         </td>
                         <td>{s.kind}</td>
                         <td>{relativeTime(s.last_run_at)}</td>

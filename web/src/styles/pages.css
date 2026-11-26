@@ -1531,9 +1531,25 @@
   margin-bottom: 28px;
 }
 
+.timeline-scroll {
+  overflow-x: auto;
+  scrollbar-width: thin;
+}
+
 .timeline-track {
   position: relative;
   margin-top: 20px;
+}
+
+/* Sur petit écran, la frise garde une largeur lisible et défile horizontalement. */
+@media (max-width: 720px) {
+  .timeline-scroll {
+    margin: 0 -20px;
+    padding: 0 20px 6px;
+  }
+  .timeline-track {
+    min-width: 620px;
+  }
 }
 
 .timeline-weeks {
@@ -2063,6 +2079,21 @@
   z-index: 5;
 }
 
+@media (max-width: 720px) {
+  .sticky-save {
+    bottom: 0;
+    margin: 0 calc(-1 * var(--gutter));
+    padding: 12px var(--gutter) calc(12px + env(safe-area-inset-bottom));
+    background: rgba(245, 241, 232, 0.94);
+    border-top: 1px solid var(--line);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+  }
+  .sticky-save .btn {
+    width: 100%;
+  }
+}
+
 .danger-zone {
   border-color: #f4c6c0;
 }
@@ -2289,9 +2320,13 @@
 
 .obs-grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 16px;
   margin-top: 20px;
+}
+
+.obs-grid > * {
+  min-width: 0;
 }
 
 .obs-wide {
@@ -2300,13 +2335,13 @@
 
 @media (max-width: 1000px) {
   .obs-grid {
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 
 @media (max-width: 680px) {
   .obs-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
   }
   .obs-wide {
     grid-column: auto;
@@ -2323,12 +2358,16 @@
 
 .sector-trends li {
   display: grid;
-  grid-template-columns: 1fr auto 86px;
+  grid-template-columns: minmax(0, 1fr) auto 86px;
   gap: 10px;
   align-items: center;
   padding: 9px 0;
   border-bottom: 1px solid var(--line);
   font-size: 14px;
+}
+
+.sector-trends li > span:first-child {
+  overflow-wrap: anywhere;
 }
 
 .sector-trends li:last-child {

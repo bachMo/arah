@@ -83,16 +83,33 @@
   top: 0;
   z-index: 50;
   height: var(--header-h);
+  border-bottom: 1px solid transparent;
+  transition: border-color 0.2s;
+}
+
+/* Le flou est porté par un pseudo-élément : posé sur l'en-tête lui-même, backdrop-filter en ferait
+   le repère des éléments en position fixe et le menu mobile serait écrasé dans ses 72 px. */
+.site-header::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
   background: rgba(245, 241, 232, 0.72);
   backdrop-filter: saturate(160%) blur(14px);
   -webkit-backdrop-filter: saturate(160%) blur(14px);
-  border-bottom: 1px solid transparent;
-  transition: border-color 0.2s, background 0.2s;
+  transition: background 0.2s;
 }
 
 .site-header.is-scrolled {
   border-bottom-color: var(--line);
+}
+
+.site-header.is-scrolled::before {
   background: rgba(245, 241, 232, 0.88);
+}
+
+.site-header.menu-open::before {
+  background: var(--paper);
 }
 
 .header-inner {
@@ -171,6 +188,7 @@
 .mobile-menu {
   position: fixed;
   inset: var(--header-h) 0 0 0;
+  height: calc(100dvh - var(--header-h));
   z-index: 49;
   background: var(--paper);
   padding: 20px var(--gutter) 32px;
@@ -1399,6 +1417,11 @@
 .table-wrap {
   overflow-x: auto;
   margin-top: 14px;
+}
+
+.cell-wrap {
+  min-width: 200px;
+  overflow-wrap: anywhere;
 }
 
 .table {

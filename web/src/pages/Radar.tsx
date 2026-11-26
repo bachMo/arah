@@ -64,6 +64,7 @@ function Timeline({ items }: { items: TimelineItem[] }) {
           Rien à l'horizon pour l'instant. Marque des offres « Intéressé » pour les voir ici.
         </p>
       ) : (
+        <div className="timeline-scroll">
         <div className="timeline-track">
           <div className="timeline-weeks">
             {Array.from({ length: weeks }, (_, i) => {
@@ -91,6 +92,7 @@ function Timeline({ items }: { items: TimelineItem[] }) {
               );
             })}
           </div>
+        </div>
         </div>
       )}
     </div>
@@ -244,7 +246,7 @@ export default function Radar() {
               <Gauge />
             </span>
             <strong className="tnum">{summary.data?.new_today ?? "–"}</strong>
-            <span>nouvelles en 24 h</span>
+            <span>nouvelles en 24&nbsp;h</span>
           </div>
         </div>
 

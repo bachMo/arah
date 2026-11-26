@@ -103,7 +103,7 @@ function Header() {
   }, [open]);
 
   return (
-    <header className={clsx("site-header", scrolled && "is-scrolled")}>
+    <header className={clsx("site-header", scrolled && "is-scrolled", open && "menu-open")}>
       <div className="container header-inner">
         <Link to={user ? "/radar" : "/"} className="header-logo" aria-label="Arah!, accueil">
           <Logo />
@@ -204,7 +204,7 @@ function Header() {
 
 function Footer() {
   const { data: config } = useConfig();
-  const github = config?.github_url ?? "https://github.com/";
+  const github = config?.github_url ?? "https://github.com/bachMo/arah";
   return (
     <footer className="site-footer">
       <div className="container footer-grid">

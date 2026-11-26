@@ -217,7 +217,7 @@ L'intégration continue (GitHub Actions) lance le lint, les tests, les migration
 Sur un serveur Linux (un VPS à 2 Go de RAM suffit pour commencer) avec Docker installé :
 
 ```bash
-git clone https://github.com/<toi>/arah.git && cd arah
+git clone https://github.com/bachMo/arah.git && cd arah
 cp .env.example .env
 ```
 

@@ -69,8 +69,8 @@ function UserMenu() {
             type="button"
             onClick={async () => {
               setOpen(false);
-              await logout();
               navigate("/");
+              await logout();
             }}
           >
             <LogOut /> Se déconnecter
@@ -179,8 +179,8 @@ function Header() {
                 type="button"
                 className="btn btn-ghost btn-block"
                 onClick={async () => {
-                  await logout();
                   navigate("/");
+                  await logout();
                 }}
               >
                 Se déconnecter

@@ -73,6 +73,21 @@ async def send_email(
             timeout=30,
         )
         return True
-    except (aiosmtplib.SMTPException, OSError) as exc:
-        log.error("Envoi de l'e-mail à %s impossible : %s", to, exc)
+    except aiosmtplib.SMTPAuthenticationError as exc:
+        log.error("Envoi de l'e-mail à %s refusé : identifiants SMTP invalides (%s)", to, exc)
+        return False
+    except aiosmtplib.SMTPException as exc:
+        hint = ""
+        if "AUTH" in str(exc) and settings.smtp_security == "none":
+            hint = " · ce serveur demande une connexion chiffrée : essaie SMTP_SECURITY=starttls (port 587)"
+        log.error("Envoi de l'e-mail à %s impossible : %s%s", to, exc, hint)
+        return False
+    except OSError as exc:
+        log.error(
+            "Envoi de l'e-mail à %s impossible (serveur %s:%s injoignable) : %s",
+            to,
+            settings.smtp_host,
+            settings.smtp_port,
+            exc,
+        )
         return False

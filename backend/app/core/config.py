@@ -118,6 +118,11 @@ class Settings(BaseSettings):
     def _csv(cls, value: object) -> object:
         return _split_csv(value)
 
+    @field_validator("smtp_host", mode="before")
+    @classmethod
+    def _default_host(cls, value: object) -> object:
+        return value or "localhost"
+
     @field_validator("admin_emails")
     @classmethod
     def _lower(cls, value: list[str]) -> list[str]:

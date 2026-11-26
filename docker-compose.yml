@@ -21,6 +21,10 @@ services:
 
   mailpit:
     image: axllent/mailpit:latest
+    environment:
+      # Accepte n'importe quel identifiant : un SMTP_USER renseigné dans .env ne bloque pas les envois de test.
+      MP_SMTP_AUTH_ACCEPT_ANY: "true"
+      MP_SMTP_AUTH_ALLOW_INSECURE: "true"
     ports:
       - "8025:8025"
       - "1025:1025"
@@ -33,9 +37,10 @@ services:
     environment:
       DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-arah}:${POSTGRES_PASSWORD:-arah}@db:5432/${POSTGRES_DB:-arah}
       EMAIL_BACKEND: smtp
-      SMTP_HOST: mailpit
-      SMTP_PORT: "1025"
-      SMTP_SECURITY: none
+      # Sans SMTP_HOST dans .env, les e-mails sont capturés par Mailpit : http://localhost:8025
+      SMTP_HOST: ${SMTP_HOST:-mailpit}
+      SMTP_PORT: ${SMTP_PORT:-1025}
+      SMTP_SECURITY: ${SMTP_SECURITY:-none}
     volumes:
       - ./backend:/app
       - /app/.venv

@@ -26,9 +26,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const queryClient = useQueryClient();
   const { data, isLoading, refetch } = useQuery({ queryKey: ["me"], queryFn: fetchMe, staleTime: 60_000, retry: 1 });
 
+  // Les autres requêtes dépendent de la personne connectée (scores, favoris…) : on les recharge à chaque changement.
+  // On ne vide jamais le cache entier : la requête ["me"] doit rester celle qu'observe ce composant.
   const setUser = useCallback(
     (user: User | null) => {
       queryClient.setQueryData(["me"], user);
+      void queryClient.invalidateQueries({ predicate: (query) => query.queryKey[0] !== "me" });
     },
     [queryClient],
   );
@@ -39,8 +42,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const logout = useCallback(async () => {
     await api.post("/auth/logout").catch(() => undefined);
-    queryClient.clear();
     queryClient.setQueryData(["me"], null);
+    queryClient.removeQueries({ predicate: (query) => query.queryKey[0] !== "me" });
   }, [queryClient]);
 
   const value = useMemo(

@@ -1,4 +1,4 @@
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation } from "@tanstack/react-query";
 import { useState, type FormEvent } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button, Field, Input, Notice } from "../../components/ui";
@@ -22,14 +22,12 @@ export default function Register() {
   const navigate = useNavigate();
   const { setUser } = useAuth();
   const { data: config } = useConfig();
-  const queryClient = useQueryClient();
   const [form, setForm] = useState({ full_name: "", email: "", password: "" });
   const [accepted, setAccepted] = useState(false);
 
   const mutation = useMutation({
     mutationFn: () => api.post<User>("/auth/register", form),
     onSuccess: (user) => {
-      queryClient.clear();
       setUser(user);
       navigate("/bienvenue", { replace: true });
     },

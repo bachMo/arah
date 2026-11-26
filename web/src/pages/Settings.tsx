@@ -175,8 +175,8 @@ function AccountTab() {
   const deleteAccount = useMutation({
     mutationFn: () => api.delete("/auth/me"),
     onSuccess: async () => {
-      await logout();
       navigate("/", { replace: true });
+      await logout();
     },
   });
 

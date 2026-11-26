@@ -1,4 +1,4 @@
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation } from "@tanstack/react-query";
 import { useState, type FormEvent } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { Button, Field, Input, Notice } from "../../components/ui";
@@ -13,14 +13,12 @@ export default function Reset() {
   const [params] = useSearchParams();
   const navigate = useNavigate();
   const { setUser } = useAuth();
-  const queryClient = useQueryClient();
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
   const token = params.get("token") ?? "";
   const mutation = useMutation({
     mutationFn: () => api.post<User>("/auth/reset-password", { token, password }),
     onSuccess: (user) => {
-      queryClient.clear();
       setUser(user);
       navigate("/radar", { replace: true });
     },

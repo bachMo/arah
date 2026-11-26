@@ -1,4 +1,4 @@
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation } from "@tanstack/react-query";
 import { useState, type FormEvent } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { Button, Field, Input, Notice } from "../../components/ui";
@@ -18,14 +18,12 @@ export default function Login() {
   const navigate = useNavigate();
   const { setUser } = useAuth();
   const { data: config } = useConfig();
-  const queryClient = useQueryClient();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
   const mutation = useMutation({
     mutationFn: () => api.post<User>("/auth/login", { email, password }),
     onSuccess: (user) => {
-      queryClient.clear();
       setUser(user);
       navigate(safeNext(params.get("suite")) ?? (user.has_profile ? "/radar" : "/bienvenue"), { replace: true });
     },

@@ -110,8 +110,8 @@ class Settings(BaseSettings):
     donation_wave_number: str | None = None
     donation_orange_money_number: str | None = None
     donation_monthly_goal_xof: int = 30000
-    github_url: str = "https://github.com/"
-    contact_email: str = "contact@example.com"
+    github_url: str = "https://github.com/bachMo/arah"
+    contact_email: str = "contact@bachirsy.com"
 
     @field_validator("cors_origins", "admin_emails", mode="before")
     @classmethod

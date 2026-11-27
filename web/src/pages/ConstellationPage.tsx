@@ -1,8 +1,8 @@
 import { useQuery } from "@tanstack/react-query";
-import { ArrowUpRight, MousePointer2, X } from "lucide-react";
-import { useCallback, useMemo, useState } from "react";
+import { ArrowUpRight, MousePointer2, Rocket, X } from "lucide-react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
-import { Constellation3D, URGENCY_COLORS } from "../components/Constellation3D";
+import { Constellation3D, URGENCY_COLORS, type SceneInsets } from "../components/Constellation3D";
 import { ScoreRing } from "../components/Opportunity";
 import { ButtonLink, EmptyState, Select } from "../components/ui";
 import { api } from "../lib/api";
@@ -50,12 +50,40 @@ export default function ConstellationPage() {
   const [selected, setSelected] = useState<StarNode | null>(null);
   const [sector, setSector] = useState("");
   const [urgency, setUrgency] = useState<StarNode["urgency"] | "">("");
+  const stageRef = useRef<HTMLDivElement>(null);
+  const headRef = useRef<HTMLDivElement>(null);
+  const controlsRef = useRef<HTMLDivElement>(null);
+  const [insets, setInsets] = useState<SceneInsets>({ left: 0, right: 0 });
 
   const query = useQuery({
     queryKey: ["constellation", user?.id],
     queryFn: () => api.get<ConstellationData>("/constellation"),
     staleTime: 120_000,
   });
+
+  // Sur grand écran, les panneaux flottent sur la scène : on lui réserve leur place pour qu'ils ne la cachent pas.
+  useEffect(() => {
+    const stage = stageRef.current;
+    if (!stage) return;
+    const measure = () => {
+      const box = stage.getBoundingClientRect();
+      const head = headRef.current?.getBoundingClientRect();
+      const controls = controlsRef.current?.getBoundingClientRect();
+      if (box.width < 1100 || !head || !controls) {
+        setInsets((v) => (v.left || v.right ? { left: 0, right: 0 } : v));
+        return;
+      }
+      const left = Math.round(head.right - box.left + 16);
+      const right = Math.round(box.right - controls.left + 16);
+      setInsets((v) => (v.left === left && v.right === right ? v : { left, right }));
+    };
+    const observer = new ResizeObserver(measure);
+    observer.observe(stage);
+    if (headRef.current) observer.observe(headRef.current);
+    if (controlsRef.current) observer.observe(controlsRef.current);
+    measure();
+    return () => observer.disconnect();
+  }, [query.data, small]);
 
   const dimmed = useCallback(
     (n: StarNode) => Boolean((sector && n.sector !== sector) || (urgency && n.urgency !== urgency)),
@@ -65,12 +93,12 @@ export default function ConstellationPage() {
 
   return (
     <div className="constellation-page">
-      <div className="constellation-stage">
+      <div className="constellation-stage" ref={stageRef}>
         {query.data && query.data.nodes.length > 0 ? (
           small ? (
             <Flat data={query.data} onSelect={setSelected} dimmed={dimmed} />
           ) : (
-            <Constellation3D data={query.data} onSelect={setSelected} dimmed={dimmed} />
+            <Constellation3D data={query.data} onSelect={setSelected} dimmed={dimmed} insets={insets} />
           )
         ) : query.isLoading ? (
           <div className="constellation-loading">
@@ -81,7 +109,7 @@ export default function ConstellationPage() {
         )}
 
         <div className="constellation-overlay container">
-          <div className="constellation-head">
+          <div className="constellation-head" ref={headRef}>
             <span className="eyebrow">Explorer autrement</span>
             <h1>
               La constellation <span className="serif">des opportunités</span>
@@ -97,8 +125,13 @@ export default function ConstellationPage() {
                 <MousePointer2 size={13} /> Glisse pour tourner · molette pour zoomer · clique sur une étoile
               </p>
             )}
+            {query.data && query.data.nodes.length > 0 && (
+              <ButtonLink to="/constellation/univers" variant="primary" icon={<Rocket />} className="universe-cta">
+                Entrer dans l'univers
+              </ButtonLink>
+            )}
           </div>
-          <div className="constellation-controls">
+          <div className="constellation-controls" ref={controlsRef}>
             <Select value={sector} onChange={(e) => setSector(e.target.value)} aria-label="Secteur">
               <option value="">Tous les secteurs</option>
               {taxonomy?.sectors.map((s) => (

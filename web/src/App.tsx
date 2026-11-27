@@ -8,6 +8,7 @@ import { NotFound } from "./pages/NotFound";
 const Explorer = lazy(() => import("./pages/Explorer"));
 const OpportunityPage = lazy(() => import("./pages/OpportunityPage"));
 const ConstellationPage = lazy(() => import("./pages/ConstellationPage"));
+const UniversePage = lazy(() => import("./pages/UniversePage"));
 const Observatory = lazy(() => import("./pages/Observatory"));
 const Journal = lazy(() => import("./pages/Journal"));
 const Support = lazy(() => import("./pages/Support"));
@@ -40,6 +41,7 @@ const auth = (node: ReactNode, admin = false) => s(<RequireAuth admin={admin}>{n
 const guest = (node: ReactNode) => s(<GuestOnly>{node}</GuestOnly>);
 
 const router = createBrowserRouter([
+  { path: "/constellation/univers", element: s(<UniversePage />) },
   {
     element: <Layout />,
     children: [

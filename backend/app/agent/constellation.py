@@ -143,6 +143,7 @@ def build(
                 "score": score,
                 "sector": (opp.sectors or [None])[0],
                 "kind": opp.kind.value,
+                "fresh": (utcnow() - (opp.published_at or opp.created_at)).days < 3,
             }
         )
 

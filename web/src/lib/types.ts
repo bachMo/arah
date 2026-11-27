@@ -242,6 +242,7 @@ export type StarNode = {
   score: number | null;
   sector: string | null;
   kind: string;
+  fresh?: boolean;
 };
 
 export type ConstellationData = {

@@ -45,15 +45,21 @@ const FRAGMENT = /* glsl */ `
   }
 `;
 
+/** Espace occupé par des panneaux posés sur la scène, en pixels : la scène se centre dans la zone libre. */
+export type SceneInsets = { left: number; right: number };
+
 type Props = {
   data: ConstellationData;
   onSelect: (node: StarNode) => void;
   dimmed?: (node: StarNode) => boolean;
   autoRotate?: boolean;
+  insets?: SceneInsets;
 };
 
-export function Constellation3D({ data, onSelect, dimmed, autoRotate = true }: Props) {
+export function Constellation3D({ data, onSelect, dimmed, autoRotate = true, insets }: Props) {
   const mountRef = useRef<HTMLDivElement>(null);
+  const insetsRef = useRef<SceneInsets>(insets ?? { left: 0, right: 0 });
+  const resizeRef = useRef<() => void>(() => {});
   const labelsRef = useRef<HTMLDivElement>(null);
   const alphaRef = useRef<THREE.BufferAttribute | null>(null);
   const [hover, setHover] = useState<{ node: StarNode; x: number; y: number } | null>(null);
@@ -201,8 +207,19 @@ export function Constellation3D({ data, onSelect, dimmed, autoRotate = true }: P
       renderer.domElement.style.width = `${w}px`;
       renderer.domElement.style.height = `${h}px`;
       camera.aspect = w / Math.max(1, h);
+      // Centre la scène dans la zone que les panneaux laissent libre, et la réduit pour qu'elle y tienne.
+      const { left, right } = insetsRef.current;
+      const free = Math.max(w * 0.35, w - left - right);
+      if (left || right) {
+        camera.setViewOffset(w, h, (right - left) / 2, 0, w, h);
+        camera.zoom = Math.min(1, (free / w) * 1.45);
+      } else {
+        camera.clearViewOffset();
+        camera.zoom = 1;
+      }
       camera.updateProjectionMatrix();
     };
+    resizeRef.current = resize;
     const observer = new ResizeObserver(resize);
     observer.observe(mount);
     resize();
@@ -265,6 +282,11 @@ export function Constellation3D({ data, onSelect, dimmed, autoRotate = true }: P
       alphaRef.current = null;
     };
   }, [data, autoRotate]);
+
+  useEffect(() => {
+    insetsRef.current = insets ?? { left: 0, right: 0 };
+    resizeRef.current();
+  }, [insets?.left, insets?.right]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     const attr = alphaRef.current;

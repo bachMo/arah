@@ -2226,7 +2226,7 @@
 }
 
 .constellation-head {
-  max-width: 460px;
+  max-width: 420px;
   padding: 20px 22px;
   border-radius: var(--radius-l);
   background: rgba(255, 253, 248, 0.78);
@@ -2361,6 +2361,34 @@
   fill: none;
   stroke: rgba(21, 19, 15, 0.1);
   stroke-dasharray: 2 3;
+}
+
+.universe-cta {
+  align-self: flex-start;
+  margin-top: 4px;
+}
+
+/* Tablette : les panneaux passent au-dessus de la scène au lieu de la recouvrir. */
+@media (min-width: 721px) and (max-width: 1099px) {
+  .constellation-stage {
+    display: flex;
+    flex-direction: column;
+  }
+  .constellation-overlay {
+    position: relative;
+    padding-bottom: 8px;
+  }
+  .constellation-head {
+    max-width: none;
+    flex: 1 1 360px;
+  }
+  .constellation-stage > .constellation-3d {
+    position: relative;
+    inset: auto;
+    flex: 1;
+    min-height: 560px;
+    order: 2;
+  }
 }
 
 @media (max-width: 720px) {

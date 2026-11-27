@@ -253,6 +253,12 @@ docker compose -f docker-compose.prod.yml exec -T db pg_dump -U arah arah | gzip
 
 Mise à jour : `git pull && docker compose -f docker-compose.prod.yml up -d --build` (les migrations s'appliquent au démarrage).
 
+### Sur un serveur partagé : site sur Vercel, API derrière ngrok
+
+Si le serveur héberge déjà d'autres projets (ports 80 et 443 pris), `docker-compose.vps.yml` ne lance que la base,
+l'API et un tunnel ngrok, et le site est publié sur Vercel. La marche à suivre est dans
+[docs/vps-ngrok.md](docs/vps-ngrok.md).
+
 ### Pour tester : site sur Vercel, API sur ta machine
 
 Le site peut être publié sur Vercel pendant que l'API tourne sur ta machine, exposée par ngrok. La marche à suivre

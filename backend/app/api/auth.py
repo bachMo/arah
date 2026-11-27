@@ -49,7 +49,11 @@ GOOGLE_STATE_COOKIE = "arah_oauth_state"
 def user_out(user: User) -> UserOut:
     data = UserOut.model_validate(user)
     data.has_password = bool(user.password_hash)
-    data.has_profile = user.profile is not None and bool(user.profile.sectors or user.profile.skills)
+    profile = user.profile
+    data.profile_kind = profile.profile_kind if profile else None
+    data.has_profile = profile is not None and (
+        profile.profile_kind == "recruiter" or bool(profile.sectors or profile.skills or profile.job_title)
+    )
     return data
 
 

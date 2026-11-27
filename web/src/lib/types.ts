@@ -11,7 +11,7 @@ export type Taxonomy = {
   experience_levels: Option[];
 };
 
-export type ProfileKind = "organization" | "candidate";
+export type ProfileKind = "organization" | "candidate" | "recruiter";
 
 export type PublicConfig = {
   app_name: string;
@@ -33,6 +33,7 @@ export type User = {
   is_admin: boolean;
   has_password: boolean;
   has_profile: boolean;
+  profile_kind: ProfileKind | null;
   created_at: string;
 };
 
@@ -131,6 +132,7 @@ export type JobSubmission = {
   reviewed_at: string | null;
   opportunity_id: string | null;
   created_at: string;
+  candidates: number;
 };
 
 export type Page<T> = { items: T[]; total: number; page: number; pages: number };

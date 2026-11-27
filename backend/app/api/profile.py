@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, status
+from sqlalchemy import delete
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.agent.pipeline import first_match_for_user
@@ -8,7 +9,7 @@ from app.agent.profile_extract import ProfileSuggestion, suggest_profile
 from app.api.deps import SessionDep, current_user
 from app.core.ratelimit import llm_limit
 from app.llm.service import BudgetExceeded, get_llm
-from app.models import Profile, User
+from app.models import AlertFrequency, Match, MatchStatus, Profile, User
 from app.schemas import DescribeIn, ProfileIn, ProfileOut
 
 router = APIRouter(prefix="/profile", tags=["profil"])
@@ -34,11 +35,21 @@ async def save_profile(
     if profile is None:
         profile = Profile(user_id=user.id)
         session.add(profile)
+    becomes_recruiter = payload.profile_kind == "recruiter" and profile.profile_kind != "recruiter"
     for field, value in payload.model_dump().items():
         setattr(profile, field, value)
+    if becomes_recruiter:
+        # Plus d'opportunités à suivre : on retire celles que l'utilisateur n'a pas touchées, et les alertes.
+        await session.execute(
+            delete(Match).where(
+                Match.user_id == user.id, Match.status == MatchStatus.new, Match.feedback.is_(None)
+            )
+        )
+        user.alert_frequency = AlertFrequency.off
     await session.commit()
     await session.refresh(profile)
-    background.add_task(first_match_for_user, user.id)
+    if payload.profile_kind != "recruiter":
+        background.add_task(first_match_for_user, user.id)
     return profile
 
 

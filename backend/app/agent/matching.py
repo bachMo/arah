@@ -72,6 +72,9 @@ class ProfileData:
 
     @property
     def is_empty(self) -> bool:
+        # Un recruteur publie des offres : l'agent ne lui cherche pas d'opportunités.
+        if self.profile_kind == "recruiter":
+            return True
         return not (self.sectors or self.skills or self.keywords_include or self.job_title)
 
 

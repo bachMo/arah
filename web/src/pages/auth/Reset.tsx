@@ -3,7 +3,7 @@ import { useState, type FormEvent } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { Button, Field, Input, Notice } from "../../components/ui";
 import { api, errorMessage } from "../../lib/api";
-import { useAuth } from "../../lib/auth";
+import { homePath, useAuth } from "../../lib/auth";
 import { useDocumentTitle } from "../../lib/hooks";
 import type { User } from "../../lib/types";
 import { AuthShell } from "./AuthShell";
@@ -20,7 +20,7 @@ export default function Reset() {
     mutationFn: () => api.post<User>("/auth/reset-password", { token, password }),
     onSuccess: (user) => {
       setUser(user);
-      navigate("/radar", { replace: true });
+      navigate(homePath(user), { replace: true });
     },
   });
   const mismatch = confirm.length > 0 && confirm !== password;

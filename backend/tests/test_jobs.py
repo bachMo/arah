@@ -150,3 +150,33 @@ async def test_job_submission_is_published_after_review(client: AsyncClient):
     assert "rh@example.com" in detail["apply_info"]
     listed = await client.get("/api/opportunities", params={"kind": "job", "contract": "cdd"})
     assert any(o["id"] == detail["id"] for o in listed.json()["items"])
+
+
+async def test_recruiter_profile_gets_no_opportunities(client: AsyncClient):
+    res = await client.post(
+        "/api/auth/register",
+        json={"email": "recrute@example.com", "password": "motdepasse2026", "full_name": "RH"},
+    )
+    assert res.status_code == 201
+    profile = {
+        "profile_kind": "recruiter",
+        "organization_name": "Cabinet Exemple",
+        "org_type": "pme",
+        "sectors": ["numerique"],
+        "countries": ["SN"],
+    }
+    assert (await client.put("/api/profile", json=profile)).status_code == 200
+    me = (await client.get("/api/auth/me")).json()
+    assert me["profile_kind"] == "recruiter" and me["has_profile"] is True
+    assert (await client.get("/api/settings/alerts")).json()["alert_frequency"] == "off"
+
+    from app.agent.pipeline import run_daily
+
+    await run_daily(trigger="test")
+    assert (await client.get("/api/radar")).json()["total"] == 0
+    assert (await client.get("/api/jobs/submissions/mine")).json() == []
+
+
+def test_recruiter_profile_is_never_scored():
+    recruiter = ProfileData(profile_kind="recruiter", sectors=["numerique"], skills=["recrutement"])
+    assert recruiter.is_empty

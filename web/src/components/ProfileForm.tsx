@@ -1,4 +1,4 @@
-import { BriefcaseBusiness, Building2 } from "lucide-react";
+import { BriefcaseBusiness, Building2, Megaphone } from "lucide-react";
 import { useTaxonomy } from "../lib/hooks";
 import type { Profile, ProfileKind } from "../lib/types";
 import { ChipGroup, Field, Input, Select, TagInput, Textarea, Toggle } from "./ui";
@@ -34,17 +34,19 @@ export function switchProfileKind(profile: Profile, kind: ProfileKind): Profile 
   return {
     ...profile,
     profile_kind: kind,
-    opportunity_kinds: kind === "candidate" ? CANDIDATE_KINDS : profile.opportunity_kinds.filter((k) => k !== "job"),
+    opportunity_kinds:
+      kind === "candidate" ? CANDIDATE_KINDS : kind === "recruiter" ? [] : profile.opportunity_kinds.filter((k) => k !== "job"),
   };
 }
 
 export function ProfileKindPicker({ value, onChange }: { value: ProfileKind; onChange: (kind: ProfileKind) => void }) {
   const choices: [ProfileKind, typeof Building2, string, string][] = [
-    ["organization", Building2, "Je représente une structure", "Entreprise, freelance, ONG, startup, coopérative : appels d'offres et financements."],
+    ["organization", Building2, "Je cherche des marchés", "Entreprise, freelance, ONG, startup : appels d'offres, financements, concours."],
     ["candidate", BriefcaseBusiness, "Je cherche un emploi", "CDI, CDD, stage, alternance, mission freelance ou volontariat."],
+    ["recruiter", Megaphone, "Je recrute", "Publie tes offres d'emploi : Arah! les propose aux candidats qui correspondent."],
   ];
   return (
-    <div className="choice-grid choice-grid-2" role="group" aria-label="Type de profil">
+    <div className="choice-grid" role="group" aria-label="Type de profil">
       {choices.map(([kind, Icon, title, text]) => (
         <button key={kind} type="button" className="choice choice-icon" aria-pressed={value === kind} onClick={() => onChange(kind)}>
           <Icon aria-hidden />
@@ -90,6 +92,9 @@ export function ProfileForm({
 
   if (value.profile_kind === "candidate") {
     return <CandidateForm value={value} set={set} advanced={advanced} errors={errors} />;
+  }
+  if (value.profile_kind === "recruiter") {
+    return <RecruiterForm value={value} set={set} />;
   }
 
   return (
@@ -253,6 +258,37 @@ function CandidateForm({
           </Field>
         </>
       )}
+    </div>
+  );
+}
+
+function RecruiterForm({ value, set }: { value: Profile; set: Setter }) {
+  const { data: taxonomy } = useTaxonomy();
+  return (
+    <div className="profile-form">
+      <div className="form-grid">
+        <Field label="Nom de ta structure" htmlFor="org">
+          <Input id="org" value={value.organization_name} onChange={(e) => set("organization_name", e.target.value)} placeholder="Ex. Cabinet Teranga RH" />
+        </Field>
+        <Field label="Type de structure" htmlFor="orgtype">
+          <Select id="orgtype" value={value.org_type} onChange={(e) => set("org_type", e.target.value)}>
+            {taxonomy?.org_types.map((o) => (
+              <option key={o.value} value={o.value}>
+                {o.label}
+              </option>
+            ))}
+          </Select>
+        </Field>
+      </div>
+      <Field label="Secteurs dans lesquels tu recrutes" hint="Facultatif, jusqu'à 3. Ils pré-remplissent tes offres.">
+        <ChipGroup options={taxonomy?.sectors ?? []} value={value.sectors} onChange={(v) => set("sectors", v.slice(0, 3))} max={3} />
+      </Field>
+      <Field label="Pays où tu recrutes">
+        <ChipGroup options={taxonomy?.countries ?? []} value={value.countries} onChange={(v) => set("countries", v)} />
+      </Field>
+      <Field label="Présentation" hint="Facultatif. Quelques mots sur ta structure.">
+        <Textarea value={value.description} onChange={(e) => set("description", e.target.value)} rows={3} maxLength={6000} />
+      </Field>
     </div>
   );
 }

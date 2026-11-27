@@ -7,7 +7,7 @@ import { DeadlineBadge, KindBadge, ScoreRing } from "../components/Opportunity";
 import { RadarScope } from "../components/RadarScope";
 import { ButtonLink } from "../components/ui";
 import { api } from "../lib/api";
-import { useAuth } from "../lib/auth";
+import { homePath, useAuth } from "../lib/auth";
 import { formatNumber, formatXof } from "../lib/format";
 import { useConfig, useCountUp, useDocumentTitle, useReveal } from "../lib/hooks";
 import type { Observatory, Opportunity, Page, Transparency } from "../lib/types";
@@ -93,8 +93,8 @@ export function Home() {
             </p>
             <div className="hero-cta">
               {user ? (
-                <ButtonLink to="/radar" size="lg" variant="signal" icon={<ArrowRight />}>
-                  Ouvrir mon radar
+                <ButtonLink to={homePath(user)} size="lg" variant="signal" icon={<ArrowRight />}>
+                  {user.profile_kind === "recruiter" ? "Voir mes offres" : "Ouvrir mon radar"}
                 </ButtonLink>
               ) : (
                 <ButtonLink to="/inscription" size="lg" variant="signal" icon={<ArrowRight />}>
@@ -271,7 +271,7 @@ export function Home() {
                 propose chaque matin les postes qui te correspondent et t'aide à écrire ta lettre de motivation.
               </p>
               <div className="row" style={{ gap: 10, flexWrap: "wrap" }}>
-                <ButtonLink to={user ? "/radar" : "/inscription"} variant="signal" icon={<ArrowRight />}>
+                <ButtonLink to={user ? homePath(user) : "/inscription"} variant="signal" icon={<ArrowRight />}>
                   {user ? "Ouvrir mon radar" : "Créer mon profil candidat"}
                 </ButtonLink>
                 <ButtonLink to="/explorer?type=job" variant="ghost">
@@ -363,8 +363,8 @@ export function Home() {
           <p className="lead" style={{ marginInline: "auto" }}>
             Moins de cinq minutes pour créer ton radar. Les premières offres s'affichent tout de suite.
           </p>
-          <ButtonLink to={user ? "/radar" : "/inscription"} size="lg" variant="signal" icon={<ArrowRight />}>
-            {user ? "Ouvrir mon radar" : "Commencer maintenant"}
+          <ButtonLink to={user ? homePath(user) : "/inscription"} size="lg" variant="signal" icon={<ArrowRight />}>
+            {user ? (user.profile_kind === "recruiter" ? "Voir mes offres" : "Ouvrir mon radar") : "Commencer maintenant"}
           </ButtonLink>
         </div>
       </section>

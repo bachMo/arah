@@ -82,6 +82,7 @@ class UserOut(ORM):
     is_admin: bool
     has_password: bool = False
     has_profile: bool = False
+    profile_kind: str | None = None
     created_at: datetime
 
 
@@ -107,7 +108,7 @@ class ProfileIn(BaseModel):
     budget_max: int | None = Field(default=None, ge=0)
     team_size: int | None = Field(default=None, ge=1, le=100000)
     past_references: str = Field(default="", max_length=6000)
-    profile_kind: Literal["organization", "candidate"] = "organization"
+    profile_kind: Literal["organization", "candidate", "recruiter"] = "organization"
     job_title: str = Field(default="", max_length=160)
     contract_types: list[str] = Field(default_factory=list, max_length=6)
     experience_level: str | None = None

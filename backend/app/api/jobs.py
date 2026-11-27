@@ -9,7 +9,7 @@ from typing import Literal
 
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, status
 from pydantic import BaseModel, EmailStr, Field, field_validator, model_validator
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.agent.enrich import apply_rules
@@ -22,6 +22,7 @@ from app.core.text import fingerprint
 from app.llm.service import LLMService
 from app.models import (
     JobSubmission,
+    Match,
     Opportunity,
     OpportunityKind,
     Profile,
@@ -118,6 +119,7 @@ class SubmissionOut(BaseModel):
     reviewed_at: datetime | None
     opportunity_id: uuid.UUID | None
     created_at: datetime
+    candidates: int = 0
 
 
 class ReviewIn(BaseModel):
@@ -188,12 +190,31 @@ async def submit_job(
 
 @router.get("/jobs/submissions/mine", response_model=list[SubmissionOut])
 async def my_submissions(user: User = Depends(current_user), session: AsyncSession = SessionDep) -> list:
-    rows = await session.scalars(
-        select(JobSubmission)
-        .where(JobSubmission.user_id == user.id)
-        .order_by(JobSubmission.created_at.desc())
+    rows = list(
+        (
+            await session.scalars(
+                select(JobSubmission)
+                .where(JobSubmission.user_id == user.id)
+                .order_by(JobSubmission.created_at.desc())
+            )
+        ).all()
     )
-    return list(rows.all())
+    # Nombre de candidats à qui l'offre a été proposée : un simple compte, sans aucune donnée personnelle.
+    published = [s.opportunity_id for s in rows if s.opportunity_id]
+    counts: dict[uuid.UUID, int] = {}
+    if published:
+        result = await session.execute(
+            select(Match.opportunity_id, func.count())
+            .where(Match.opportunity_id.in_(published))
+            .group_by(Match.opportunity_id)
+        )
+        counts = {opp_id: n for opp_id, n in result.all()}
+    out = []
+    for submission in rows:
+        item = SubmissionOut.model_validate(submission)
+        item.candidates = counts.get(submission.opportunity_id, 0) if submission.opportunity_id else 0
+        out.append(item)
+    return out
 
 
 # --- Validation ------------------------------------------------------------------------------------

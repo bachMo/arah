@@ -96,6 +96,8 @@ export default function OpportunityPage() {
   const remaining = daysLeft(o.deadline_at);
   const closed = remaining !== null && remaining < 0;
   const isJob = o.kind === "job";
+  // Un recruteur consulte les offres sans les suivre : pas de score, de statut ni d'aide à la réponse.
+  const isRecruiter = user?.profile_kind === "recruiter";
 
   const copyLink = async () => {
     try {
@@ -238,7 +240,7 @@ export default function OpportunityPage() {
 
           <aside className="detail-side">
             <div className="card card-pad side-card">
-              {user && match ? (
+              {isRecruiter ? null : user && match ? (
                 <>
                   <div className="side-score">
                     <ScoreRing score={match.score} size={84} stroke={7} />
@@ -298,7 +300,7 @@ export default function OpportunityPage() {
                 </div>
               )}
 
-              {user && (
+              {user && !isRecruiter && (
                 <>
                   <hr className="divider" style={{ margin: "20px 0" }} />
                   <span className="card-label">Où en es-tu ?</span>

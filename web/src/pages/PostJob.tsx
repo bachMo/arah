@@ -1,14 +1,14 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { CheckCircle2, Clock3, MailWarning, Send, XCircle } from "lucide-react";
-import { useState, type FormEvent } from "react";
+import { CheckCircle2, MailWarning, Send } from "lucide-react";
+import { useEffect, useRef, useState, type FormEvent } from "react";
 import { Link } from "react-router-dom";
+import { SubmissionList } from "../components/SubmissionList";
 import { Button, ButtonLink, ChipGroup, Field, Input, Notice, Select, Textarea, Toggle } from "../components/ui";
 import { api, ApiError, errorMessage } from "../lib/api";
 import { useAuth } from "../lib/auth";
-import { formatDate } from "../lib/format";
 import { useDocumentTitle, useTaxonomy } from "../lib/hooks";
 import { useToast } from "../lib/toast";
-import type { JobSubmission } from "../lib/types";
+import type { JobSubmission, Profile } from "../lib/types";
 
 type Form = {
   title: string;
@@ -40,11 +40,6 @@ const EMPTY: Form = {
   deadline: "",
 };
 
-const STATUS: Record<JobSubmission["status"], { label: string; icon: typeof Clock3; tone: string }> = {
-  pending: { label: "En attente de validation", icon: Clock3, tone: "badge-sun" },
-  approved: { label: "En ligne", icon: CheckCircle2, tone: "badge-leaf" },
-  rejected: { label: "Non publiée", icon: XCircle, tone: "badge-signal" },
-};
 
 export default function PostJob() {
   useDocumentTitle("Publier une offre d'emploi");
@@ -94,6 +89,18 @@ function SubmissionForm({ verified, email }: { verified: boolean; email: string 
   const set = <K extends keyof Form>(key: K, value: Form[K]) => setForm((f) => ({ ...f, [key]: value }));
 
   const mine = useQuery({ queryKey: ["submissions"], queryFn: () => api.get<JobSubmission[]>("/jobs/submissions/mine") });
+  const profile = useQuery({ queryKey: ["profile"], queryFn: () => api.get<Profile | null>("/profile") });
+  const prefilled = useRef(false);
+  const fromProfile = (p: Profile | null | undefined): Partial<Form> => {
+    if (!p || p.profile_kind !== "recruiter") return {};
+    const country = p.countries.find((c) => !["AO", "AF", "INT"].includes(c));
+    return { company: p.organization_name, sectors: p.sectors.slice(0, 3), ...(country ? { country } : {}) };
+  };
+  useEffect(() => {
+    if (prefilled.current || !profile.data) return;
+    prefilled.current = true;
+    setForm((f) => ({ ...f, ...fromProfile(profile.data) }));
+  }, [profile.data]);
   const submit = useMutation({
     mutationFn: () =>
       api.post<JobSubmission>("/jobs/submissions", {
@@ -104,7 +111,7 @@ function SubmissionForm({ verified, email }: { verified: boolean; email: string 
       }),
     onSuccess: () => {
       setSent(true);
-      setForm({ ...EMPTY, apply_email: email });
+      setForm({ ...EMPTY, apply_email: email, ...fromProfile(profile.data) });
       queryClient.invalidateQueries({ queryKey: ["submissions"] });
       toast.show("Offre envoyée. Tu recevras un e-mail dès qu'elle sera validée.");
       window.scrollTo({ top: 0, behavior: "smooth" });
@@ -231,35 +238,13 @@ function SubmissionForm({ verified, email }: { verified: boolean; email: string 
 
       {mine.data && mine.data.length > 0 && (
         <section className="submissions">
-          <h2 className="section-subtitle">Mes offres proposées</h2>
-          <ul className="submission-list">
-            {mine.data.map((s) => {
-              const status = STATUS[s.status];
-              const Icon = status.icon;
-              return (
-                <li key={s.id} className="card submission-item">
-                  <div>
-                    <strong>{s.title}</strong>
-                    <span className="small muted">
-                      {s.company} · proposée le {formatDate(s.created_at)}
-                    </span>
-                    {s.status === "rejected" && s.review_note && <span className="small">Motif : {s.review_note}</span>}
-                  </div>
-                  <div className="submission-side">
-                    <span className={`badge ${status.tone}`}>
-                      <Icon />
-                      {status.label}
-                    </span>
-                    {s.opportunity_id && (
-                      <Link className="link small" to={`/offre/${s.opportunity_id}`}>
-                        Voir l'offre
-                      </Link>
-                    )}
-                  </div>
-                </li>
-              );
-            })}
-          </ul>
+          <div className="row" style={{ justifyContent: "space-between", gap: 12 }}>
+            <h2 className="section-subtitle">Mes offres proposées</h2>
+            <Link className="link small" to="/mes-offres">
+              Tout voir
+            </Link>
+          </div>
+          <SubmissionList items={mine.data.slice(0, 5)} />
         </section>
       )}
     </>

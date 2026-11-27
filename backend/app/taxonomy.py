@@ -411,6 +411,7 @@ OPPORTUNITY_KINDS: dict[str, str] = {
 PROFILE_KINDS: dict[str, str] = {
     "organization": "Je représente une structure",
     "candidate": "Je cherche un emploi, un stage ou une mission",
+    "recruiter": "Je recrute",
 }
 
 CONTRACT_TYPES: dict[str, str] = {

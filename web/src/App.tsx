@@ -1,7 +1,7 @@
 import { lazy, Suspense, type ReactNode } from "react";
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
 import { Layout } from "./components/Layout";
-import { GuestOnly, RequireAuth } from "./components/RequireAuth";
+import { GuestOnly, NotForRecruiters, RequireAuth } from "./components/RequireAuth";
 import { Home } from "./pages/Home";
 import { NotFound } from "./pages/NotFound";
 
@@ -23,6 +23,7 @@ const Vault = lazy(() => import("./pages/Vault"));
 const Settings = lazy(() => import("./pages/Settings"));
 const Admin = lazy(() => import("./pages/Admin"));
 const PostJob = lazy(() => import("./pages/PostJob"));
+const MyJobs = lazy(() => import("./pages/MyJobs"));
 const Unsubscribe = lazy(() => import("./pages/Unsubscribe"));
 const Legal = lazy(() => import("./pages/Legal"));
 
@@ -57,7 +58,8 @@ const router = createBrowserRouter([
       { path: "/verifier", element: s(<Verify />) },
       { path: "/desabonnement", element: s(<Unsubscribe />) },
       { path: "/bienvenue", element: auth(<Onboarding />) },
-      { path: "/radar", element: auth(<Radar />) },
+      { path: "/radar", element: auth(<NotForRecruiters><Radar /></NotForRecruiters>) },
+      { path: "/mes-offres", element: auth(<MyJobs />) },
       { path: "/preparer/:id", element: auth(<Prepare />) },
       { path: "/coffre", element: auth(<Vault />) },
       { path: "/reglages", element: auth(<Settings />) },

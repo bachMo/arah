@@ -3,7 +3,7 @@ import { useState, type FormEvent } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { Button, Field, Input, Notice } from "../../components/ui";
 import { api, errorMessage } from "../../lib/api";
-import { useAuth } from "../../lib/auth";
+import { homePath, useAuth } from "../../lib/auth";
 import { useConfig, useDocumentTitle } from "../../lib/hooks";
 import type { User } from "../../lib/types";
 import { AuthShell, GoogleButton, OrDivider } from "./AuthShell";
@@ -25,7 +25,7 @@ export default function Login() {
     mutationFn: () => api.post<User>("/auth/login", { email, password }),
     onSuccess: (user) => {
       setUser(user);
-      navigate(safeNext(params.get("suite")) ?? (user.has_profile ? "/radar" : "/bienvenue"), { replace: true });
+      navigate(safeNext(params.get("suite")) ?? homePath(user), { replace: true });
     },
   });
 

@@ -58,3 +58,9 @@ export function useAuth(): AuthContextValue {
   if (!ctx) throw new Error("useAuth doit être utilisé dans AuthProvider");
   return ctx;
 }
+
+/** Page d'accueil d'un utilisateur connecté, selon son profil. */
+export function homePath(user: Pick<User, "has_profile" | "profile_kind"> | null): string {
+  if (!user || !user.has_profile) return "/bienvenue";
+  return user.profile_kind === "recruiter" ? "/mes-offres" : "/radar";
+}

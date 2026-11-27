@@ -1,8 +1,8 @@
 import clsx from "clsx";
-import { ChevronDown, FolderLock, LogOut, Menu, Radar, Settings, Shield, X } from "lucide-react";
+import { BriefcaseBusiness, ChevronDown, FolderLock, LogOut, Menu, Radar, Settings, Shield, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { Link, NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
-import { useAuth } from "../lib/auth";
+import { homePath, useAuth } from "../lib/auth";
 import { initials } from "../lib/format";
 import { useConfig } from "../lib/hooks";
 import { GithubIcon } from "./icons";
@@ -60,12 +60,20 @@ function UserMenu() {
             <strong>{user.full_name || "Mon compte"}</strong>
             <span className="muted tiny">{user.email}</span>
           </div>
-          <Link role="menuitem" to="/radar" onClick={() => setOpen(false)}>
-            <Radar /> Mon radar
-          </Link>
-          <Link role="menuitem" to="/coffre" onClick={() => setOpen(false)}>
-            <FolderLock /> Coffre de documents
-          </Link>
+          {user.profile_kind === "recruiter" ? (
+            <Link role="menuitem" to="/mes-offres" onClick={() => setOpen(false)}>
+              <BriefcaseBusiness /> Mes offres
+            </Link>
+          ) : (
+            <>
+              <Link role="menuitem" to="/radar" onClick={() => setOpen(false)}>
+                <Radar /> Mon radar
+              </Link>
+              <Link role="menuitem" to="/coffre" onClick={() => setOpen(false)}>
+                <FolderLock /> Coffre de documents
+              </Link>
+            </>
+          )}
           <Link role="menuitem" to="/reglages" onClick={() => setOpen(false)}>
             <Settings /> Profil et réglages
           </Link>
@@ -132,9 +140,15 @@ function Header() {
         <div className="header-actions">
           {user ? (
             <>
-              <ButtonLink to="/radar" size="sm" icon={<Radar />}>
-                Mon radar
-              </ButtonLink>
+              {user.profile_kind === "recruiter" ? (
+                <ButtonLink to={homePath(user)} size="sm" icon={<BriefcaseBusiness />}>
+                  Mes offres
+                </ButtonLink>
+              ) : (
+                <ButtonLink to={homePath(user)} size="sm" icon={<Radar />}>
+                  Mon radar
+                </ButtonLink>
+              )}
               <UserMenu />
             </>
           ) : (
@@ -162,8 +176,8 @@ function Header() {
         <div className="mobile-menu">
           <nav aria-label="Navigation mobile">
             {user && (
-              <NavLink to="/radar" className="mobile-link">
-                Mon radar
+              <NavLink to={homePath(user)} className="mobile-link">
+                {user.profile_kind === "recruiter" ? "Mes offres" : "Mon radar"}
               </NavLink>
             )}
             {NAV.map((item) => (
@@ -180,9 +194,11 @@ function Header() {
             </NavLink>
             {user && (
               <>
-                <NavLink to="/coffre" className="mobile-link">
-                  Coffre de documents
-                </NavLink>
+                {user.profile_kind !== "recruiter" && (
+                  <NavLink to="/coffre" className="mobile-link">
+                    Coffre de documents
+                  </NavLink>
+                )}
                 <NavLink to="/reglages" className="mobile-link">
                   Profil et réglages
                 </NavLink>

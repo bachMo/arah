@@ -4,7 +4,7 @@ import { useEffect, useRef } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { ButtonLink, Notice } from "../../components/ui";
 import { api, errorMessage } from "../../lib/api";
-import { useAuth } from "../../lib/auth";
+import { homePath, useAuth } from "../../lib/auth";
 import { useDocumentTitle } from "../../lib/hooks";
 import type { User } from "../../lib/types";
 import { AuthShell } from "./AuthShell";
@@ -38,7 +38,7 @@ export default function Verify() {
           <Notice tone="success" icon={<CheckCircle2 />}>
             C'est tout bon : tu recevras désormais tes alertes par e-mail.
           </Notice>
-          <ButtonLink to={mutation.data.has_profile ? "/radar" : "/bienvenue"} variant="signal">
+          <ButtonLink to={homePath(mutation.data)} variant="signal">
             Continuer
           </ButtonLink>
         </div>

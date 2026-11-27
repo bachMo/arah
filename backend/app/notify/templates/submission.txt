@@ -1,0 +1,16 @@
+{{ headline }}
+
+{{ intro }}
+
+{{ job_title }}
+{{ company }}
+{% if note %}
+
+{{ note }}
+{% endif %}
+{% if action_url %}
+
+{{ action_label }} : {{ action_url }}
+{% endif %}
+
+— {{ app_name }}

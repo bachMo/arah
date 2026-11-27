@@ -1,6 +1,6 @@
 import { useMutation } from "@tanstack/react-query";
 import { useState, type FormEvent } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { Button, Field, Input, Notice } from "../../components/ui";
 import { api, ApiError, errorMessage } from "../../lib/api";
 import { useAuth } from "../../lib/auth";
@@ -20,6 +20,7 @@ function strength(password: string): { score: number; label: string } {
 export default function Register() {
   useDocumentTitle("Créer mon radar");
   const navigate = useNavigate();
+  const [params] = useSearchParams();
   const { setUser } = useAuth();
   const { data: config } = useConfig();
   const [form, setForm] = useState({ full_name: "", email: "", password: "" });
@@ -29,7 +30,8 @@ export default function Register() {
     mutationFn: () => api.post<User>("/auth/register", form),
     onSuccess: (user) => {
       setUser(user);
-      navigate("/bienvenue", { replace: true });
+      const next = params.get("suite");
+      navigate(next && next.startsWith("/") && !next.startsWith("//") ? next : "/bienvenue", { replace: true });
     },
   });
   const fields = mutation.error instanceof ApiError ? mutation.error.fields : {};

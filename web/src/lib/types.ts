@@ -6,7 +6,12 @@ export type Taxonomy = {
   org_types: Option[];
   opportunity_kinds: Option[];
   doc_types: Option[];
+  profile_kinds: Option[];
+  contract_types: Option[];
+  experience_levels: Option[];
 };
+
+export type ProfileKind = "organization" | "candidate";
 
 export type PublicConfig = {
   app_name: string;
@@ -46,6 +51,11 @@ export type Profile = {
   budget_max: number | null;
   team_size: number | null;
   past_references: string;
+  profile_kind: ProfileKind;
+  job_title: string;
+  contract_types: string[];
+  experience_level: string | null;
+  remote_ok: boolean;
   updated_at?: string | null;
 };
 
@@ -83,6 +93,10 @@ export type Opportunity = {
   published_at: string | null;
   deadline_at: string | null;
   is_demo: boolean;
+  contract_type: string | null;
+  experience_level: string | null;
+  location: string;
+  remote: boolean;
   source: { slug: string; name: string };
   match: Match | null;
 };
@@ -94,7 +108,29 @@ export type OpportunityDetail = Opportunity & {
   keywords: string[];
   language: string;
   enrichment_method: string;
+  apply_info: string;
   has_preparation: boolean;
+};
+
+export type JobSubmission = {
+  id: string;
+  status: "pending" | "approved" | "rejected";
+  title: string;
+  company: string;
+  contract_type: string;
+  experience_level: string | null;
+  country: string;
+  location: string;
+  remote: boolean;
+  sectors: string[];
+  description: string;
+  apply_url: string;
+  apply_email: string;
+  deadline_at: string | null;
+  review_note: string;
+  reviewed_at: string | null;
+  opportunity_id: string | null;
+  created_at: string;
 };
 
 export type Page<T> = { items: T[]; total: number; page: number; pages: number };

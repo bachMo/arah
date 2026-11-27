@@ -1,4 +1,4 @@
-"""Source générique : n'importe quel flux RSS ou Atom (concours, bourses, programmes, appels à projets)."""
+"""Source générique : n'importe quel flux RSS ou Atom (concours, bourses, programmes, appels à projets, emplois)."""
 
 from __future__ import annotations
 
@@ -57,6 +57,9 @@ class RssAdapter:
                     published_at=_to_datetime(entry.get("published_parsed") or entry.get("updated_parsed")),
                     kind=config.get("kind"),
                     language=config.get("language", "fr"),
+                    contract_type=config.get("contract_type"),
+                    location=str(config.get("location") or ""),
+                    remote=bool(config.get("remote", False)),
                 )
             )
         return items

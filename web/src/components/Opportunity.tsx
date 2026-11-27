@@ -1,5 +1,5 @@
 import clsx from "clsx";
-import { ArrowUpRight, Building2, CalendarClock, Coins, MapPin, ThumbsDown, ThumbsUp } from "lucide-react";
+import { ArrowUpRight, BriefcaseBusiness, Building2, CalendarClock, Coins, Laptop, MapPin, ThumbsDown, ThumbsUp } from "lucide-react";
 import { Link } from "react-router-dom";
 import { deadlineLabel, formatMoney, formatShortDate, scoreTone } from "../lib/format";
 import { useTaxonomy } from "../lib/hooks";
@@ -52,12 +52,41 @@ const KIND_TONE: Record<string, string> = {
   grant: "badge-leaf",
   competition: "badge-sun",
   program: "badge-signal",
+  job: "badge-ink",
   other: "",
 };
 
 export function KindBadge({ kind }: { kind: string }) {
   const { labels } = useTaxonomy();
   return <span className={clsx("badge", KIND_TONE[kind])}>{labels.kind[kind] ?? kind}</span>;
+}
+
+/** Contrat et télétravail d'une offre d'emploi. */
+export function JobBadges({ contract, remote }: { contract: string | null; remote: boolean }) {
+  const { labels } = useTaxonomy();
+  return (
+    <>
+      {contract && (
+        <span className="badge badge-outline">
+          <BriefcaseBusiness />
+          {labels.contract[contract] ?? contract}
+        </span>
+      )}
+      {remote && (
+        <span className="badge badge-outline">
+          <Laptop />
+          Télétravail
+        </span>
+      )}
+    </>
+  );
+}
+
+/** Lieu d'une offre : la ville quand on la connaît, avec le pays. */
+export function placeLabel(o: Pick<Opportunity, "location" | "country">, countries: Record<string, string>): string {
+  const country = o.country ? countries[o.country] ?? o.country : "";
+  if (o.location && country && !o.location.toLowerCase().includes(country.toLowerCase())) return `${o.location}, ${country}`;
+  return o.location || country;
 }
 
 type CardProps = {
@@ -75,6 +104,7 @@ export function OpportunityCard({ opportunity: o, onFeedback, compact }: CardPro
       <div className="opp-card-main">
         <div className="opp-card-top">
           <KindBadge kind={o.kind} />
+          {o.kind === "job" && <JobBadges contract={o.contract_type} remote={o.remote} />}
           <DeadlineBadge deadline={o.deadline_at} />
           {o.is_demo && <span className="badge badge-outline">Démo</span>}
           {match?.status && match.status !== "new" && <StatusBadge status={match.status} />}
@@ -86,14 +116,22 @@ export function OpportunityCard({ opportunity: o, onFeedback, compact }: CardPro
               <Building2 /> {o.issuer}
             </span>
           )}
-          {o.country && (
+          {(o.country || o.location) && (
             <span>
-              <MapPin /> {labels.country[o.country] ?? o.country}
+              <MapPin /> {placeLabel(o, labels.country)}
             </span>
           )}
-          <span>
-            <Coins /> {formatMoney(o.budget_amount, o.budget_currency, o.budget_xof)}
-          </span>
+          {o.kind === "job" ? (
+            o.experience_level && (
+              <span>
+                <BriefcaseBusiness /> {labels.level[o.experience_level] ?? o.experience_level}
+              </span>
+            )
+          ) : (
+            <span>
+              <Coins /> {formatMoney(o.budget_amount, o.budget_currency, o.budget_xof)}
+            </span>
+          )}
         </div>
         {!compact && match?.reasons?.length ? (
           <ul className="opp-card-reasons">

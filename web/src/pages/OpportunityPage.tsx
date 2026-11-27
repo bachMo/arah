@@ -3,6 +3,7 @@ import clsx from "clsx";
 import {
   AlertTriangle,
   ArrowLeft,
+  BriefcaseBusiness,
   Building2,
   CalendarClock,
   Check,
@@ -13,6 +14,7 @@ import {
   HelpCircle,
   Link2,
   MapPin,
+  Send,
   ThumbsDown,
   ThumbsUp,
   Wand2,
@@ -20,7 +22,7 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { DeadlineBadge, KindBadge, OpportunityCard, ScoreRing, STATUS_LABELS } from "../components/Opportunity";
+import { DeadlineBadge, JobBadges, KindBadge, OpportunityCard, placeLabel, ScoreRing, STATUS_LABELS } from "../components/Opportunity";
 import { Button, ButtonLink, EmptyState, Skeleton } from "../components/ui";
 import { api, ApiError, errorMessage } from "../lib/api";
 import { useAuth } from "../lib/auth";
@@ -93,6 +95,7 @@ export default function OpportunityPage() {
   const match = o.match;
   const remaining = daysLeft(o.deadline_at);
   const closed = remaining !== null && remaining < 0;
+  const isJob = o.kind === "job";
 
   const copyLink = async () => {
     try {
@@ -114,6 +117,7 @@ export default function OpportunityPage() {
           <article className="detail-main">
             <div className="row" style={{ gap: 8 }}>
               <KindBadge kind={o.kind} />
+              {isJob && <JobBadges contract={o.contract_type} remote={o.remote} />}
               <DeadlineBadge deadline={o.deadline_at} />
               {o.is_demo && <span className="badge badge-outline">Donnée de démonstration</span>}
               {o.sectors.map((s) => (
@@ -127,22 +131,37 @@ export default function OpportunityPage() {
             <dl className="facts">
               <div>
                 <dt>
-                  <Building2 /> Émetteur
+                  <Building2 /> {isJob ? "Employeur" : "Émetteur"}
                 </dt>
                 <dd>{o.issuer || "Non précisé"}</dd>
               </div>
               <div>
                 <dt>
-                  <MapPin /> Pays
+                  <MapPin /> {isJob ? "Lieu" : "Pays"}
                 </dt>
-                <dd>{o.country ? labels.country[o.country] ?? o.country : "Non précisé"}</dd>
+                <dd>
+                  {placeLabel(o, labels.country) || "Non précisé"}
+                  {isJob && o.remote ? " · télétravail possible" : ""}
+                </dd>
               </div>
-              <div>
-                <dt>
-                  <Coins /> Montant
-                </dt>
-                <dd>{formatMoney(o.budget_amount, o.budget_currency, o.budget_xof)}</dd>
-              </div>
+              {isJob ? (
+                <div>
+                  <dt>
+                    <BriefcaseBusiness /> Contrat
+                  </dt>
+                  <dd>
+                    {o.contract_type ? labels.contract[o.contract_type] ?? o.contract_type : "Non précisé"}
+                    {o.experience_level ? ` · ${labels.level[o.experience_level] ?? o.experience_level}` : ""}
+                  </dd>
+                </div>
+              ) : (
+                <div>
+                  <dt>
+                    <Coins /> Montant
+                  </dt>
+                  <dd>{formatMoney(o.budget_amount, o.budget_currency, o.budget_xof)}</dd>
+                </div>
+              )}
               <div>
                 <dt>
                   <CalendarClock /> Date limite
@@ -156,7 +175,17 @@ export default function OpportunityPage() {
               <p className="detail-summary">{o.summary || "Résumé indisponible."}</p>
             </section>
 
-            {o.documents_required.length > 0 && (
+            {isJob && o.apply_info && (
+              <section className="detail-section">
+                <h2>Comment postuler</h2>
+                <div className="apply-box">
+                  <Send />
+                  <p>{o.apply_info}</p>
+                </div>
+              </section>
+            )}
+
+            {!isJob && o.documents_required.length > 0 && (
               <section className="detail-section">
                 <h2>Pièces à fournir</h2>
                 <ul className="doc-list">
@@ -182,13 +211,13 @@ export default function OpportunityPage() {
 
             {o.description && (
               <section className="detail-section">
-                <h2>Texte de l'avis</h2>
-                <div className={clsx("detail-description", expanded && "is-expanded")}>
+                <h2>{isJob ? "Description du poste" : "Texte de l'avis"}</h2>
+                <div className={clsx("detail-description", (expanded || o.description.length <= 700) && "is-expanded")}>
                   <p>{o.description}</p>
                 </div>
                 {o.description.length > 700 && (
                   <button type="button" className="link small" onClick={() => setExpanded((v) => !v)}>
-                    {expanded ? "Réduire" : "Lire tout l'avis"}
+                    {expanded ? "Réduire" : isJob ? "Lire toute l'offre" : "Lire tout l'avis"}
                   </button>
                 )}
               </section>
@@ -256,8 +285,9 @@ export default function OpportunityPage() {
                 <div className="stack" style={{ ["--gap" as string]: "12px" }}>
                   <span className="card-label">Est-ce pour toi ?</span>
                   <p className="small" style={{ color: "var(--ink-2)" }}>
-                    Crée ton radar gratuit : l'agent calcule ton score d'adéquation, t'explique pourquoi et t'aide à
-                    préparer la réponse.
+                    {isJob
+                      ? "Crée ton radar gratuit : l'agent calcule ton score d'adéquation avec ce poste et t'aide à préparer ta candidature."
+                      : "Crée ton radar gratuit : l'agent calcule ton score d'adéquation, t'explique pourquoi et t'aide à préparer la réponse."}
                   </p>
                   <ButtonLink to="/inscription" variant="signal" className="btn-block">
                     Créer mon radar
@@ -310,7 +340,7 @@ export default function OpportunityPage() {
                     style={{ marginTop: 16 }}
                     aria-disabled={closed}
                   >
-                    {o.has_preparation ? "Reprendre ma préparation" : "Aide-moi à répondre"}
+                    {o.has_preparation ? "Reprendre ma préparation" : isJob ? "Aide-moi à postuler" : "Aide-moi à répondre"}
                   </ButtonLink>
                 </>
               )}
@@ -318,7 +348,7 @@ export default function OpportunityPage() {
               <div className="side-links">
                 {o.url && (
                   <a className="btn btn-ghost btn-block" href={o.url} target="_blank" rel="noreferrer noopener">
-                    <ExternalLink /> Voir l'avis original
+                    <ExternalLink /> {isJob ? "Voir l'offre originale" : "Voir l'avis original"}
                   </a>
                 )}
                 <Button variant="soft" block icon={<Link2 />} onClick={copyLink}>

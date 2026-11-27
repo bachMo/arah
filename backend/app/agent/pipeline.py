@@ -92,6 +92,10 @@ async def ensure_sources(session: AsyncSession) -> None:
     settings = get_settings()
     existing = {s.slug: s for s in (await session.scalars(select(Source))).all()}
     for spec in DEFAULT_SOURCES:
+        spec = dict(spec)
+        required = spec.pop("requires_setting", None)
+        if required and not getattr(settings, required, None):
+            continue
         if spec["slug"] not in existing:
             session.add(Source(**spec, enabled=True))
     demo = existing.get(DEMO_SOURCE["slug"])
@@ -122,6 +126,11 @@ def _new_opportunity(source: Source, raw: RawOpportunity, content_hash: str) -> 
         published_at=raw.published_at,
         deadline_at=raw.deadline_at,
         is_demo=raw.is_demo,
+        contract_type=raw.contract_type,
+        experience_level=raw.experience_level,
+        location=raw.location[:160],
+        remote=raw.remote,
+        apply_info=raw.apply_info[:8000],
     )
 
 

@@ -19,7 +19,15 @@ from app.schemas import MatchUpdate, OpportunityOut, Page
 router = APIRouter(prefix="/radar", tags=["radar"])
 
 ACTIVE = [MatchStatus.new, MatchStatus.interested, MatchStatus.preparing, MatchStatus.submitted]
-PREP_DAYS = {"tender": 10, "consultancy": 7, "grant": 12, "competition": 5, "program": 4, "other": 6}
+PREP_DAYS = {
+    "tender": 10,
+    "consultancy": 7,
+    "grant": 12,
+    "competition": 5,
+    "program": 4,
+    "job": 3,
+    "other": 6,
+}
 
 
 @router.get("", response_model=Page)
@@ -29,6 +37,7 @@ async def radar(
     ] = "active",
     min_score: int = Query(default=0, ge=0, le=100),
     sector: str | None = None,
+    kind: str | None = None,
     q: str | None = Query(default=None, max_length=120),
     sort: Literal["score", "deadline", "recent"] = "score",
     page: int = Query(default=1, ge=1, le=500),
@@ -50,6 +59,8 @@ async def radar(
         query = query.where(Match.status == MatchStatus(view))
     if sector:
         query = query.where(Opportunity.sectors.any(sector))
+    if kind:
+        query = query.where(Opportunity.kind == kind)
     if q:
         query = query.where(
             or_(Opportunity.title.ilike(f"%{q.strip()}%"), Opportunity.issuer.ilike(f"%{q.strip()}%"))

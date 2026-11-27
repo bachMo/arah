@@ -14,7 +14,16 @@ from typing import Any
 from pydantic import BaseModel, Field, field_validator
 
 from app.core.text import contains_term, normalize, tokens
-from app.taxonomy import REGIONAL_CODES, WEST_AFRICA, country_label, sector_label
+from app.taxonomy import (
+    CANDIDATE_DEFAULT_KINDS,
+    CONTRACT_TYPES,
+    EXPERIENCE_LEVELS,
+    REGIONAL_CODES,
+    WEST_AFRICA,
+    country_label,
+    experience_gap,
+    sector_label,
+)
 
 
 @dataclass
@@ -27,6 +36,21 @@ class ProfileData:
     opportunity_kinds: list[str] = field(default_factory=list)
     budget_min: int | None = None
     budget_max: int | None = None
+    profile_kind: str = "organization"
+    job_title: str = ""
+    contract_types: list[str] = field(default_factory=list)
+    experience_level: str | None = None
+    remote_ok: bool = False
+
+    @property
+    def is_candidate(self) -> bool:
+        return self.profile_kind == "candidate"
+
+    @property
+    def wanted_kinds(self) -> list[str]:
+        if self.opportunity_kinds:
+            return self.opportunity_kinds
+        return CANDIDATE_DEFAULT_KINDS if self.is_candidate else []
 
     @classmethod
     def from_model(cls, profile: Any) -> ProfileData:
@@ -39,11 +63,16 @@ class ProfileData:
             opportunity_kinds=list(profile.opportunity_kinds or []),
             budget_min=profile.budget_min,
             budget_max=profile.budget_max,
+            profile_kind=getattr(profile, "profile_kind", None) or "organization",
+            job_title=getattr(profile, "job_title", None) or "",
+            contract_types=list(getattr(profile, "contract_types", None) or []),
+            experience_level=getattr(profile, "experience_level", None),
+            remote_ok=bool(getattr(profile, "remote_ok", False)),
         )
 
     @property
     def is_empty(self) -> bool:
-        return not (self.sectors or self.skills or self.keywords_include)
+        return not (self.sectors or self.skills or self.keywords_include or self.job_title)
 
 
 @dataclass
@@ -58,6 +87,9 @@ class OpportunityData:
     budget_xof: int | None = None
     deadline_at: datetime | None = None
     documents_required: list[str] = field(default_factory=list)
+    contract_type: str | None = None
+    experience_level: str | None = None
+    remote: bool = False
 
     @classmethod
     def from_model(cls, opp: Any) -> OpportunityData:
@@ -73,6 +105,9 @@ class OpportunityData:
             budget_xof=opp.budget_xof,
             deadline_at=opp.deadline_at,
             documents_required=list(opp.documents_required or []),
+            contract_type=getattr(opp, "contract_type", None),
+            experience_level=getattr(opp, "experience_level", None),
+            remote=bool(getattr(opp, "remote", False)),
         )
 
 
@@ -128,6 +163,42 @@ def days_left(deadline: datetime | None, now: datetime | None = None) -> int | N
     return (deadline - now).days
 
 
+def _job_points(
+    profile: ProfileData,
+    opp: OpportunityData,
+    reasons: list[tuple[int, str]],
+    risks: list[str],
+    criteria: list[dict[str, Any]],
+) -> float:
+    """Contrat et niveau d'expérience : remplacent le critère de montant pour une offre d'emploi."""
+    points = 0.0
+    contract = CONTRACT_TYPES.get(opp.contract_type or "", "")
+    if not profile.contract_types or not opp.contract_type:
+        points += 3.0
+        contract_met = None
+    elif opp.contract_type in profile.contract_types:
+        points += 6.0
+        contract_met = True
+        reasons.append((16, f"Contrat recherché : {contract}"))
+    else:
+        contract_met = False
+        reasons.append((20, f"Contrat proposé : {contract}, différent de ce que tu cherches"))
+    criteria.append({"label": "Type de contrat", "met": contract_met})
+
+    gap = experience_gap(opp.experience_level, profile.experience_level)
+    if not opp.experience_level or not profile.experience_level:
+        points += 1.0
+        level_met = None
+    elif gap <= 0:
+        points += 2.0
+        level_met = True
+    else:
+        level_met = False
+        risks.append(f"Expérience demandée : {EXPERIENCE_LEVELS[opp.experience_level].lower()}")
+    criteria.append({"label": "Niveau d'expérience", "met": level_met})
+    return points
+
+
 def score_match(
     profile: ProfileData,
     opp: OpportunityData,
@@ -153,6 +224,14 @@ def score_match(
     if remaining is not None and remaining < 0:
         return MatchResult(0, ["Date limite dépassée"], [], [], True, "date limite dépassée")
 
+    # Les offres d'emploi ne vont qu'aux profils qui les demandent ; un candidat ne reçoit que les types choisis.
+    wanted = profile.wanted_kinds
+    if (opp.kind == "job" and "job" not in wanted and not profile.is_candidate) or (
+        profile.is_candidate and opp.kind not in wanted
+    ):
+        return MatchResult(0, ["Type d'offre non suivi"], [], [], True, "type d'offre non suivi")
+    is_job = opp.kind == "job"
+
     reasons: list[tuple[int, str]] = []
     risks: list[str] = []
     criteria: list[dict[str, Any]] = []
@@ -161,6 +240,14 @@ def score_match(
     seen: set[str] = set()
     found: list[str] = []
     weighted = 0.0
+    if profile.job_title and is_job:
+        seen.add(normalize(profile.job_title))
+        if contains_term(title_norm, profile.job_title):
+            found.append(profile.job_title)
+            weighted += 3.0
+        elif contains_term(body_norm, profile.job_title):
+            found.append(profile.job_title)
+            weighted += 1.5
     for term in [*profile.keywords_include, *profile.skills]:
         key = normalize(term)
         if not key or key in seen:
@@ -188,7 +275,10 @@ def score_match(
 
     # Zone géographique
     countries = set(profile.countries)
-    if not countries or opp.country is None:
+    if is_job and opp.remote and profile.remote_ok:
+        country_points, country_met = 14.0, True
+        reasons.append((20, "Télétravail possible"))
+    elif not countries or opp.country is None:
         country_points, country_met = 7.0, None
     elif opp.country in countries:
         country_points, country_met = 14.0, True
@@ -202,16 +292,18 @@ def score_match(
     criteria.append({"label": "Zone géographique", "met": country_met})
 
     # Type d'offre
-    if not profile.opportunity_kinds:
+    if not wanted:
         kind_points = 5.0
-    elif opp.kind in profile.opportunity_kinds:
+    elif opp.kind in wanted:
         kind_points = 8.0
     else:
         kind_points = 0.0
 
-    # Montant
+    # Montant, ou contrat et expérience pour une offre d'emploi
     budget = opp.budget_xof
-    if budget is None or (profile.budget_min is None and profile.budget_max is None):
+    if is_job:
+        budget_points = _job_points(profile, opp, reasons, risks, criteria)
+    elif budget is None or (profile.budget_min is None and profile.budget_max is None):
         budget_points, budget_met = 4.0, None
     elif profile.budget_max is not None and budget > profile.budget_max:
         budget_points, budget_met = (3.0 if budget <= profile.budget_max * 3 else 0.0), False
@@ -222,7 +314,8 @@ def score_match(
     else:
         budget_points, budget_met = 8.0, True
         reasons.append((14, f"Montant dans ta fourchette ({format_xof(budget)})"))
-    criteria.append({"label": "Montant adapté", "met": budget_met})
+    if not is_job:
+        criteria.append({"label": "Montant adapté", "met": budget_met})
 
     # Délai
     if remaining is None:
@@ -243,6 +336,12 @@ def score_match(
         risks.append("Garantie de soumission à prévoir auprès d'une banque")
 
     total = kw_points + sector_points + country_points + kind_points + budget_points + deadline_points
+    if is_job:
+        # Un poste sans aucun lien avec le métier ou les compétences n'a pas sa place dans le radar.
+        if not found:
+            total *= 0.6
+        if profile.contract_types and opp.contract_type and opp.contract_type not in profile.contract_types:
+            total -= 10
     if feedback:
         adjust = feedback.adjustment(opp)
         total += adjust

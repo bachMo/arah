@@ -19,6 +19,8 @@ export function useTaxonomy() {
       kind: toMap(data?.opportunity_kinds),
       org: toMap(data?.org_types),
       doc: toMap(data?.doc_types),
+      contract: toMap(data?.contract_types),
+      level: toMap(data?.experience_levels),
     };
   }, [query.data]);
   return { ...query, labels };

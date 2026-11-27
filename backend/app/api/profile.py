@@ -47,7 +47,9 @@ async def suggest(
     payload: DescribeIn, user: User = Depends(current_user), session: AsyncSession = SessionDep
 ) -> ProfileSuggestion:
     try:
-        suggestion = await suggest_profile(session, get_llm(), payload.description, user_id=user.id)
+        suggestion = await suggest_profile(
+            session, get_llm(), payload.description, user_id=user.id, profile_kind=payload.profile_kind
+        )
     except BudgetExceeded as exc:
         raise HTTPException(status.HTTP_429_TOO_MANY_REQUESTS, detail=str(exc)) from exc
     await session.commit()

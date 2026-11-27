@@ -1,15 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import {
-  ArrowRight,
-  BellRing,
-  Eye,
-  FileSignature,
-  HeartHandshake,
-  Orbit,
-  ScanSearch,
-  Sparkles,
-  TrendingUp,
-} from "lucide-react";
+import { ArrowRight, BellRing, BriefcaseBusiness, Eye, FileSignature, HeartHandshake, Megaphone, Orbit, ScanSearch, Sparkles, TrendingUp } from "lucide-react";
 import { Link } from "react-router-dom";
 import { AreaChart } from "../components/charts";
 import { GithubIcon } from "../components/icons";
@@ -27,7 +17,7 @@ const AGENTS = [
     icon: ScanSearch,
     name: "Le Veilleur",
     time: "Chaque matin, 6 h",
-    text: "Parcourt les portails d'appels d'offres, les bailleurs et les programmes. Il écarte les doublons et les offres déjà closes.",
+    text: "Parcourt les portails d'appels d'offres, les bailleurs, les programmes et les offres d'emploi. Il écarte les doublons et les offres déjà closes.",
     tone: "ocean",
   },
   {
@@ -48,7 +38,7 @@ const AGENTS = [
     icon: FileSignature,
     name: "Le Rédacteur",
     time: "Sur ta demande",
-    text: "Prépare la liste des pièces, la matrice d'exigences, le plan et la lettre de soumission. Tu relis, tu ajustes, tu valides.",
+    text: "Prépare la liste des pièces, la matrice d'exigences, le plan et la lettre de soumission, ou ta lettre de motivation pour un poste. Tu relis, tu valides.",
     tone: "leaf",
   },
 ];
@@ -98,8 +88,8 @@ export function Home() {
               <span className="serif">Arah!</span> les guette <span className="highlight">pour toi.</span>
             </h1>
             <p className="hero-lead">
-              Appels d'offres, financements, concours et programmes : un agent les cherche chaque matin, te dit lesquels
-              te correspondent et pourquoi, puis t'aide à préparer ta réponse.
+              Appels d'offres, financements, concours, programmes et offres d'emploi : un agent les cherche chaque matin,
+              te dit lesquels te correspondent et pourquoi, puis t'aide à préparer ta réponse ou ta candidature.
             </p>
             <div className="hero-cta">
               {user ? (
@@ -262,6 +252,50 @@ export function Home() {
               Voir les tendances <ArrowRight />
             </span>
           </Link>
+        </div>
+      </section>
+
+      <section className="section">
+        <div className="container">
+          <div className="jobs-band reveal">
+            <article className="jobs-card">
+              <span className="jobs-icon">
+                <BriefcaseBusiness />
+              </span>
+              <span className="eyebrow">Candidats</span>
+              <h2>
+                Tu cherches un emploi, <span className="serif">un stage ou une mission ?</span>
+              </h2>
+              <p>
+                CDI, CDD, stage, alternance, freelance ou volontariat : indique ton métier et tes compétences, Arah! te
+                propose chaque matin les postes qui te correspondent et t'aide à écrire ta lettre de motivation.
+              </p>
+              <div className="row" style={{ gap: 10, flexWrap: "wrap" }}>
+                <ButtonLink to={user ? "/radar" : "/inscription"} variant="signal" icon={<ArrowRight />}>
+                  {user ? "Ouvrir mon radar" : "Créer mon profil candidat"}
+                </ButtonLink>
+                <ButtonLink to="/explorer?type=job" variant="ghost">
+                  Voir les offres d'emploi
+                </ButtonLink>
+              </div>
+            </article>
+            <article className="jobs-card jobs-card-dark">
+              <span className="jobs-icon">
+                <Megaphone />
+              </span>
+              <span className="eyebrow">Recruteurs</span>
+              <h2>
+                Tu recrutes ? <span className="serif">Publie ton offre gratuitement.</span>
+              </h2>
+              <p>
+                Ton offre est relue, mise en ligne, puis proposée directement aux candidats dont le profil correspond :
+                métier, compétences, contrat et lieu.
+              </p>
+              <ButtonLink to="/publier-une-offre" variant="primary" icon={<ArrowRight />}>
+                Publier une offre
+              </ButtonLink>
+            </article>
+          </div>
         </div>
       </section>
 

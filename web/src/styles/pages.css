@@ -661,6 +661,90 @@
   }
 }
 
+.jobs-band {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 20px;
+}
+
+.jobs-card {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 14px;
+  padding: clamp(24px, 4vw, 40px);
+  border-radius: var(--radius-xl);
+  background: var(--card);
+  border: 1px solid var(--line);
+  box-shadow: var(--shadow-s);
+}
+
+.jobs-card h2 {
+  margin: 0;
+  font-size: clamp(26px, 3vw, 36px);
+  line-height: 1.08;
+  letter-spacing: -0.03em;
+}
+
+.jobs-card h2 .serif {
+  color: var(--signal-2);
+}
+
+.jobs-card p {
+  margin: 0 0 6px;
+  color: var(--ink-2);
+  max-width: 52ch;
+}
+
+.jobs-icon {
+  display: grid;
+  place-items: center;
+  width: 48px;
+  height: 48px;
+  border-radius: 14px;
+  background: var(--signal-soft);
+  color: var(--signal-2);
+}
+
+.jobs-icon svg {
+  width: 22px;
+  height: 22px;
+}
+
+.jobs-card-dark {
+  background: var(--ink);
+  border-color: var(--ink);
+  color: var(--paper);
+}
+
+.jobs-card-dark p {
+  color: #d9d0c0;
+}
+
+.jobs-card-dark h2 .serif {
+  color: var(--sun);
+}
+
+.jobs-card-dark .eyebrow {
+  color: var(--sun);
+}
+
+.jobs-card-dark .jobs-icon {
+  background: rgba(255, 201, 60, 0.16);
+  color: var(--sun);
+}
+
+.jobs-card-dark .btn {
+  background: var(--paper);
+  color: var(--ink);
+}
+
+@media (max-width: 860px) {
+  .jobs-band {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
 .final-cta {
   text-align: center;
   padding-bottom: clamp(72px, 10vw, 128px);
@@ -1446,6 +1530,17 @@
   border-color: var(--ink);
   box-shadow: 0 0 0 3px rgba(21, 19, 15, 0.08);
   background: var(--card);
+}
+
+.choice-grid-2 {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.choice-icon > svg {
+  width: 22px;
+  height: 22px;
+  margin-bottom: 6px;
+  color: var(--signal);
 }
 
 @media (max-width: 640px) {
@@ -2996,4 +3091,168 @@
   display: flex;
   flex-direction: column;
   gap: 8px;
+}
+
+.apply-box {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  padding: 16px 18px;
+  border-radius: var(--radius);
+  background: var(--sun-soft);
+  color: var(--ink-2);
+}
+
+.apply-box svg {
+  flex-shrink: 0;
+  width: 18px;
+  height: 18px;
+  margin-top: 3px;
+  color: #8a5a00;
+}
+
+.apply-box p {
+  margin: 0;
+  white-space: pre-line;
+  overflow-wrap: anywhere;
+}
+
+.toggle-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px 16px;
+  border: 1.5px solid var(--line);
+  border-radius: var(--radius);
+  background: #fff;
+}
+
+.toggle-row > div {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.explorer-tabs {
+  margin-bottom: 14px;
+}
+
+.submissions {
+  margin-top: 40px;
+}
+
+.submission-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 14px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.submission-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 16px 18px;
+}
+
+.submission-item > div:first-child {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.submission-side {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+@media (max-width: 560px) {
+  .submission-item {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .submission-side {
+    align-items: flex-start;
+  }
+}
+
+.review-list {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin: 16px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.review-item {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: #fff;
+}
+
+.review-head > div {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.review-meta,
+.review-apply,
+.review-apply a,
+.review-apply span {
+  display: inline-flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.review-apply {
+  gap: 16px;
+  overflow-wrap: anywhere;
+}
+
+.review-meta svg,
+.review-apply svg {
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
+}
+
+.review-desc {
+  margin: 0;
+  white-space: pre-line;
+  color: var(--ink-2);
+  font-size: 14.5px;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.review-desc.is-open {
+  display: block;
+}
+
+.review-item > .link {
+  align-self: flex-start;
+}
+
+.review-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  flex-wrap: wrap;
 }

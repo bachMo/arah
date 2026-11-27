@@ -8,7 +8,7 @@ from typing import Any, ClassVar, Protocol
 
 import httpx
 
-USER_AGENT = "ArahBot/0.1 (+https://github.com/; open source opportunity watch)"
+USER_AGENT = "ArahBot/0.2 (+https://github.com/bachMo/arah; open source opportunity watch)"
 
 
 @dataclass
@@ -28,6 +28,12 @@ class RawOpportunity:
     sectors: list[str] = field(default_factory=list)
     documents_required: list[str] = field(default_factory=list)
     is_demo: bool = False
+    # Offres d'emploi
+    contract_type: str | None = None
+    experience_level: str | None = None
+    location: str = ""
+    remote: bool = False
+    apply_info: str = ""
 
 
 class SourceAdapter(Protocol):

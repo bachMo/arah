@@ -1,0 +1,9 @@
+{% extends "_base.html" %}
+{% block preheader %}{{ headline }}{% endblock %}
+{% block content %}
+<h1 style="margin:0 0 12px;font-size:24px;line-height:30px;">{{ headline }}</h1>
+<p style="margin:0;font-size:15px;line-height:24px;color:#4A4236;">{{ intro }}</p>
+<p style="margin:16px 0 0;font-size:15px;line-height:24px;color:#1F1712;"><strong>{{ job_title }}</strong><br>{{ company }}</p>
+{% if note %}<p style="margin:16px 0 0;font-size:14px;line-height:22px;color:#4A4236;background:#F5F1E8;border-radius:10px;padding:12px 14px;">{{ note }}</p>{% endif %}
+{% if action_url %}{% with url=action_url, label=action_label %}{% include "_button.html" %}{% endwith %}{% endif %}
+{% endblock %}

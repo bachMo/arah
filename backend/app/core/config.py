@@ -79,6 +79,8 @@ class Settings(BaseSettings):
     llm_price_smart_in: float = 3.0
     llm_price_smart_out: float = 15.0
     usd_to_xof: float = 600.0
+    # Identifiant d'application ReliefWeb (offres d'emploi des ONG et agences de l'ONU), à demander sur apidoc.reliefweb.int
+    reliefweb_appname: str = ""
 
     # E-mail
     email_backend: Literal["smtp", "console"] = "console"

@@ -56,6 +56,7 @@ SMTP_USER=<identifiant SMTP>
 SMTP_PASSWORD=<mot de passe SMTP>
 EMAIL_FROM=Arah! <alertes@ton-domaine.com>
 # + la clé d'IA (OPENROUTER_API_KEY…)
+# + RELIEFWEB_APPNAME pour les offres d'emploi des ONG et de l'ONU (voir le README)
 ```
 
 En production, l'API refuse de démarrer sans `SECRET_KEY` d'au moins 32 caractères ni `EMAIL_BACKEND=smtp`.

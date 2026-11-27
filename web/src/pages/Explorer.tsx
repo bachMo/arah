@@ -3,7 +3,7 @@ import { Search, SearchX, SlidersHorizontal } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { OpportunityCard, OpportunitySkeleton } from "../components/Opportunity";
-import { Button, EmptyState, Pagination, Select } from "../components/ui";
+import { Button, EmptyState, Pagination, Select, Tabs } from "../components/ui";
 import { api } from "../lib/api";
 import { plural } from "../lib/format";
 import { useDebounced, useDocumentTitle, useTaxonomy } from "../lib/hooks";
@@ -14,6 +14,15 @@ const DEADLINES = [
   { value: "7", label: "Dans 7 jours" },
   { value: "14", label: "Dans 14 jours" },
   { value: "30", label: "Dans 30 jours" },
+];
+
+const CATEGORIES: { value: string; label: string }[] = [
+  { value: "", label: "Tout" },
+  { value: "job", label: "Offres d'emploi" },
+  { value: "tender", label: "Appels d'offres" },
+  { value: "grant", label: "Financements" },
+  { value: "competition", label: "Concours" },
+  { value: "program", label: "Programmes" },
 ];
 
 const SORTS = [
@@ -36,6 +45,8 @@ export default function Explorer() {
     sector: params.get("secteur") ?? "",
     country: params.get("pays") ?? "",
     kind: params.get("type") ?? "",
+    contract: params.get("contrat") ?? "",
+    remote: params.get("teletravail") ?? "",
     deadline_within: params.get("delai") ?? "",
     sort: params.get("tri") ?? "recent",
     page: Number(params.get("page") ?? 1),
@@ -64,6 +75,8 @@ export default function Explorer() {
         sector: filters.sector,
         country: filters.country,
         kind: filters.kind,
+        contract: filters.kind === "job" ? filters.contract : "",
+        remote: filters.kind === "job" && filters.remote ? "true" : "",
         deadline_within: filters.deadline_within,
         sort: filters.sort,
         page: filters.page,
@@ -71,7 +84,8 @@ export default function Explorer() {
     placeholderData: keepPreviousData,
   });
 
-  const activeCount = [filters.sector, filters.country, filters.kind, filters.deadline_within].filter(Boolean).length;
+  const activeCount = [filters.sector, filters.country, filters.kind, filters.contract, filters.remote, filters.deadline_within].filter(Boolean).length;
+  const isJobs = filters.kind === "job";
 
   return (
     <div className="page">
@@ -80,13 +94,23 @@ export default function Explorer() {
           <div>
             <span className="eyebrow">Toutes les offres ouvertes</span>
             <h1 className="page-title">
-              Explorer <span className="serif">les opportunités</span>
+              Explorer <span className="serif">{isJobs ? "les offres d'emploi" : "les opportunités"}</span>
             </h1>
             <p className="lead">
-              Appels d'offres, manifestations d'intérêt, financements, concours et programmes collectés chaque jour.
+              {isJobs
+                ? "CDI, CDD, stages, alternances, missions freelance et volontariats, collectés chaque jour ou publiés par les recruteurs."
+                : "Appels d'offres, financements, concours, programmes et offres d'emploi collectés chaque jour."}{" "}
               Crée ton radar pour les voir triés selon ton profil.
             </p>
           </div>
+        </div>
+
+        <div className="explorer-tabs">
+          <Tabs
+            tabs={CATEGORIES}
+            value={filters.kind}
+            onChange={(value) => update({ type: value, contrat: "", teletravail: "" })}
+          />
         </div>
 
         <div className="explorer-bar card">
@@ -96,7 +120,7 @@ export default function Explorer() {
               type="search"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Rechercher : plateforme web, solaire, formation…"
+              placeholder={isJobs ? "Rechercher : comptable, développeur, communication…" : "Rechercher : plateforme web, solaire, formation…"}
               aria-label="Rechercher une offre"
             />
           </label>
@@ -128,6 +152,22 @@ export default function Explorer() {
                 </option>
               ))}
             </Select>
+            {isJobs && (
+              <>
+                <Select value={filters.contract} onChange={(e) => update({ contrat: e.target.value })} aria-label="Contrat">
+                  <option value="">Tous les contrats</option>
+                  {taxonomy?.contract_types.map((c) => (
+                    <option key={c.value} value={c.value}>
+                      {c.label}
+                    </option>
+                  ))}
+                </Select>
+                <Select value={filters.remote} onChange={(e) => update({ teletravail: e.target.value })} aria-label="Télétravail">
+                  <option value="">Sur place ou à distance</option>
+                  <option value="1">Télétravail possible</option>
+                </Select>
+              </>
+            )}
             <Select value={filters.deadline_within} onChange={(e) => update({ delai: e.target.value })} aria-label="Date limite">
               {DEADLINES.map((d) => (
                 <option key={d.value} value={d.value}>

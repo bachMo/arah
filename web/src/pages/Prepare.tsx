@@ -240,6 +240,7 @@ export default function Prepare() {
   }
 
   const o = opportunity.data;
+  const isJob = o.kind === "job";
   const done = draft ? [...draft.requirements, ...draft.checklist].filter((i) => i.done).length : 0;
   const total = draft ? draft.requirements.length + draft.checklist.length : 0;
   const progress = total ? Math.round((done / total) * 100) : 0;
@@ -253,7 +254,7 @@ export default function Prepare() {
         </Link>
         <div className="prepare-head">
           <div>
-            <span className="eyebrow">Préparation de la réponse</span>
+            <span className="eyebrow">{isJob ? "Préparation de la candidature" : "Préparation de la réponse"}</span>
             <h1 className="prepare-title">{o.title}</h1>
             <div className="row" style={{ gap: 8, marginTop: 12 }}>
               <DeadlineBadge deadline={o.deadline_at} />
@@ -289,19 +290,23 @@ export default function Prepare() {
               <Wand2 />
             </span>
             <div>
-              <h2 className="card-title">{draft ? "Régénérer le brouillon" : "Préparer ma réponse"}</h2>
+              <h2 className="card-title">{draft ? "Régénérer le brouillon" : isJob ? "Préparer ma candidature" : "Préparer ma réponse"}</h2>
               <p className="small muted">
-                {config?.llm.enabled
-                  ? "Ajoute le dossier d'appel d'offres (PDF) pour une matrice d'exigences complète, reliée aux pages du dossier."
-                  : "Le Rédacteur propose une base solide à partir de l'avis et de ton profil. Ajoute une clé d'IA pour des brouillons sur mesure."}
+                {isJob
+                  ? "Le Rédacteur part de l'offre et de ton profil : exigences du poste, points forts à mettre en avant et lettre de motivation."
+                  : config?.llm.enabled
+                    ? "Ajoute le dossier d'appel d'offres (PDF) pour une matrice d'exigences complète, reliée aux pages du dossier."
+                    : "Le Rédacteur propose une base solide à partir de l'avis et de ton profil. Ajoute une clé d'IA pour des brouillons sur mesure."}
               </p>
             </div>
           </div>
           <div className="generator-actions">
             <input ref={fileRef} type="file" accept="application/pdf" hidden onChange={onFile} />
-            <Button variant="ghost" icon={<FileUp />} onClick={() => fileRef.current?.click()}>
-              {file ? file.name.slice(0, 28) : prep.data?.source_document_name ? "Changer le dossier" : "Ajouter le dossier (PDF)"}
-            </Button>
+            {!isJob && (
+              <Button variant="ghost" icon={<FileUp />} onClick={() => fileRef.current?.click()}>
+                {file ? file.name.slice(0, 28) : prep.data?.source_document_name ? "Changer le dossier" : "Ajouter le dossier (PDF)"}
+              </Button>
+            )}
             <Button variant="signal" icon={draft ? <RefreshCw /> : <Wand2 />} loading={generate.isPending} onClick={() => generate.mutate()}>
               {draft ? "Régénérer" : "Générer le brouillon"}
             </Button>
@@ -314,7 +319,11 @@ export default function Prepare() {
             <span className="scanning-ring" />
             <div>
               <strong>Le Rédacteur travaille…</strong>
-              <p className="small muted">Lecture de l'avis{file ? " et du dossier" : ""}, matrice d'exigences, plan, lettre. Cela peut prendre jusqu'à une minute.</p>
+              <p className="small muted">
+                {isJob
+                  ? "Lecture de l'offre, exigences du poste, points forts, lettre de motivation. Cela peut prendre jusqu'à une minute."
+                  : `Lecture de l'avis${file ? " et du dossier" : ""}, matrice d'exigences, plan, lettre. Cela peut prendre jusqu'à une minute.`}
+              </p>
             </div>
           </div>
         )}
@@ -322,7 +331,9 @@ export default function Prepare() {
         {!draft && !generate.isPending && (
           <div className="card">
             <EmptyState icon={<ListChecks />} title="Aucun brouillon pour l'instant">
-              Lance le Rédacteur : il prépare la liste des pièces, la matrice d'exigences, le plan et la lettre de soumission.
+              {isJob
+                ? "Lance le Rédacteur : il prépare les exigences du poste, ce qu'il faut réunir pour postuler, tes points forts et une lettre de motivation."
+                : "Lance le Rédacteur : il prépare la liste des pièces, la matrice d'exigences, le plan et la lettre de soumission."}
             </EmptyState>
           </div>
         )}
@@ -332,14 +343,14 @@ export default function Prepare() {
             <div className="stack" style={{ ["--gap" as string]: "20px" }}>
               <section className="card card-pad">
                 <div className="section-row">
-                  <h2 className="card-title">Matrice d'exigences</h2>
+                  <h2 className="card-title">{isJob ? "Exigences du poste" : "Matrice d'exigences"}</h2>
                   <span className="badge">{draft.requirements.filter((r) => r.done).length} / {draft.requirements.length}</span>
                 </div>
                 <CheckList items={draft.requirements} onChange={(requirements) => edit({ requirements })} grouped addLabel="Ajouter une exigence" />
               </section>
               <section className="card card-pad">
                 <div className="section-row">
-                  <h2 className="card-title">Pièces et actions</h2>
+                  <h2 className="card-title">{isJob ? "Pour postuler" : "Pièces et actions"}</h2>
                   <span className="badge">{draft.checklist.filter((r) => r.done).length} / {draft.checklist.length}</span>
                 </div>
                 <CheckList items={draft.checklist} onChange={(checklist) => edit({ checklist })} addLabel="Ajouter une pièce ou une action" />
@@ -355,17 +366,21 @@ export default function Prepare() {
                 <div className="meter-bar">
                   <span style={{ width: `${progress}%` }} />
                 </div>
-                {o.deadline_at && <p className="small muted">Dépôt attendu le {formatDate(o.deadline_at)}.</p>}
+                {o.deadline_at && (
+                  <p className="small muted">
+                    {isJob ? "Candidature attendue avant le" : "Dépôt attendu le"} {formatDate(o.deadline_at)}.
+                  </p>
+                )}
                 {prep.data?.method && <p className="tiny muted">Brouillon : {prep.data.method}</p>}
               </section>
               <section className="card card-pad">
-                <h2 className="card-title">Plan de la réponse</h2>
+                <h2 className="card-title">{isJob ? "Tes points forts" : "Plan de la réponse"}</h2>
                 <OutlineEditor sections={draft.outline} onChange={(outline) => edit({ outline })} />
               </section>
             </div>
             <section className="card card-pad letter-card">
               <div className="section-row">
-                <h2 className="card-title">Lettre de soumission</h2>
+                <h2 className="card-title">{isJob ? "Lettre de motivation" : "Lettre de soumission"}</h2>
                 <Button variant="soft" size="sm" icon={<ClipboardCopy />} onClick={copyLetter}>
                   Copier
                 </Button>

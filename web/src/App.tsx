@@ -22,6 +22,7 @@ const Prepare = lazy(() => import("./pages/Prepare"));
 const Vault = lazy(() => import("./pages/Vault"));
 const Settings = lazy(() => import("./pages/Settings"));
 const Admin = lazy(() => import("./pages/Admin"));
+const PostJob = lazy(() => import("./pages/PostJob"));
 const Unsubscribe = lazy(() => import("./pages/Unsubscribe"));
 const Legal = lazy(() => import("./pages/Legal"));
 
@@ -48,6 +49,7 @@ const router = createBrowserRouter([
       { path: "/observatoire", element: s(<Observatory />) },
       { path: "/journal", element: s(<Journal />) },
       { path: "/soutenir", element: s(<Support />) },
+      { path: "/publier-une-offre", element: s(<PostJob />) },
       { path: "/connexion", element: guest(<Login />) },
       { path: "/inscription", element: guest(<Register />) },
       { path: "/mot-de-passe-oublie", element: s(<Forgot />) },

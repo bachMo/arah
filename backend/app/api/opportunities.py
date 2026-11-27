@@ -13,7 +13,7 @@ from app.agent import constellation
 from app.agent.observatory import market_overview, user_position
 from app.api.deps import SessionDep, current_user, current_user_optional
 from app.core.db import utcnow
-from app.models import Match, Opportunity, Preparation, User
+from app.models import Match, Opportunity, OpportunityKind, Preparation, User
 from app.schemas import MatchOut, OpportunityDetail, OpportunityOut, Page
 
 router = APIRouter(tags=["offres"])
@@ -29,6 +29,8 @@ def apply_filters(
     country: str | None,
     kind: str | None,
     open_only: bool,
+    contract: str | None = None,
+    remote: bool | None = None,
     deadline_within: int | None,
     budget_min: int | None,
 ) -> Select:
@@ -44,6 +46,10 @@ def apply_filters(
         query = query.where(Opportunity.country == country)
     if kind:
         query = query.where(Opportunity.kind == kind)
+    if contract:
+        query = query.where(Opportunity.contract_type == contract)
+    if remote:
+        query = query.where(Opportunity.remote.is_(True))
     if open_only:
         query = query.where(or_(Opportunity.deadline_at.is_(None), Opportunity.deadline_at >= now))
     if deadline_within:
@@ -65,6 +71,8 @@ async def list_opportunities(
     sector: str | None = None,
     country: str | None = None,
     kind: str | None = None,
+    contract: str | None = None,
+    remote: bool | None = None,
     open_only: bool = True,
     deadline_within: int | None = Query(default=None, ge=1, le=365),
     budget_min: int | None = Query(default=None, ge=0),
@@ -81,6 +89,8 @@ async def list_opportunities(
         sector=sector,
         country=country,
         kind=kind,
+        contract=contract,
+        remote=remote,
         open_only=open_only,
         deadline_within=deadline_within,
         budget_min=budget_min,
@@ -146,12 +156,18 @@ async def similar(opportunity_id: uuid.UUID, session: AsyncSession = SessionDep)
     if opp is None or not opp.sectors:
         return []
     now = utcnow()
+    # Une offre d'emploi appelle d'autres offres d'emploi ; les autres types restent entre eux.
+    is_job = opp.kind == OpportunityKind.job
+    same_family = (
+        Opportunity.kind == OpportunityKind.job if is_job else Opportunity.kind != OpportunityKind.job
+    )
     rows = (
         await session.scalars(
             select(Opportunity)
             .where(
                 Opportunity.id != opp.id,
                 Opportunity.sectors.overlap(opp.sectors),
+                same_family,
                 or_(Opportunity.deadline_at.is_(None), Opportunity.deadline_at >= now),
             )
             .order_by(func.similarity(Opportunity.title, opp.title).desc())

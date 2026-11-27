@@ -61,6 +61,7 @@ class OpportunityKind(enum.StrEnum):
     grant = "grant"
     competition = "competition"
     program = "program"
+    job = "job"
     other = "other"
 
 
@@ -145,6 +146,14 @@ class Profile(Base):
     budget_max: Mapped[int | None] = mapped_column(BigInteger)
     team_size: Mapped[int | None] = mapped_column(Integer)
     past_references: Mapped[str] = mapped_column(Text, default="")
+    # Profil candidat (emploi, stage, mission)
+    profile_kind: Mapped[str] = mapped_column(
+        String(20), default="organization", server_default="organization"
+    )
+    job_title: Mapped[str] = mapped_column(String(160), default="", server_default="")
+    contract_types: Mapped[list[str]] = _str_array()
+    experience_level: Mapped[str | None] = mapped_column(String(20))
+    remote_ok: Mapped[bool] = mapped_column(Boolean, default=False, server_default="false")
     updated_at: Mapped[datetime] = _updated()
 
     user: Mapped[User] = relationship(back_populates="profile")
@@ -206,6 +215,12 @@ class Opportunity(Base):
     published_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), index=True)
     deadline_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), index=True)
     is_demo: Mapped[bool] = mapped_column(Boolean, default=False)
+    # Offres d'emploi
+    contract_type: Mapped[str | None] = mapped_column(String(20), index=True)
+    experience_level: Mapped[str | None] = mapped_column(String(20))
+    location: Mapped[str] = mapped_column(String(160), default="", server_default="")
+    remote: Mapped[bool] = mapped_column(Boolean, default=False, server_default="false")
+    apply_info: Mapped[str] = mapped_column(Text, default="", server_default="")
     enriched_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     enrichment_method: Mapped[str] = mapped_column(String(80), default="")
     created_at: Mapped[datetime] = _created()
@@ -357,4 +372,40 @@ class Donation(Base):
     status: Mapped[DonationStatus] = mapped_column(_enum(DonationStatus), default=DonationStatus.pending)
     payment_method: Mapped[str] = mapped_column(String(60), default="")
     paid_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    created_at: Mapped[datetime] = _created()
+
+
+class SubmissionStatus(enum.StrEnum):
+    pending = "pending"
+    approved = "approved"
+    rejected = "rejected"
+
+
+class JobSubmission(Base):
+    """Offre d'emploi proposée par un recruteur, publiée seulement après validation."""
+
+    __tablename__ = "job_submissions"
+
+    id: Mapped[uuid.UUID] = _pk()
+    user_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"), index=True)
+    status: Mapped[SubmissionStatus] = mapped_column(
+        _enum(SubmissionStatus), default=SubmissionStatus.pending, index=True
+    )
+    title: Mapped[str] = mapped_column(String(300))
+    company: Mapped[str] = mapped_column(String(200))
+    contract_type: Mapped[str] = mapped_column(String(20))
+    experience_level: Mapped[str | None] = mapped_column(String(20))
+    country: Mapped[str] = mapped_column(String(8), default="SN")
+    location: Mapped[str] = mapped_column(String(160), default="")
+    remote: Mapped[bool] = mapped_column(Boolean, default=False)
+    sectors: Mapped[list[str]] = _str_array()
+    description: Mapped[str] = mapped_column(Text)
+    apply_url: Mapped[str] = mapped_column(String(1000), default="")
+    apply_email: Mapped[str] = mapped_column(String(255), default="")
+    deadline_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    review_note: Mapped[str] = mapped_column(Text, default="")
+    reviewed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    opportunity_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("opportunities.id", ondelete="SET NULL")
+    )
     created_at: Mapped[datetime] = _created()

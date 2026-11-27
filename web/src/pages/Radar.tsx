@@ -109,10 +109,11 @@ export default function Radar() {
   const [view, setView] = useState<View>("active");
   const [sort, setSort] = useState("score");
   const [sector, setSector] = useState("");
+  const [kind, setKind] = useState("");
   const [page, setPage] = useState(1);
   const [welcomeUntil] = useState(() => (params.get("bienvenue") ? Date.now() + 25_000 : 0));
 
-  useEffect(() => setPage(1), [view, sort, sector]);
+  useEffect(() => setPage(1), [view, sort, sector, kind]);
 
   const summary = useQuery({
     queryKey: ["radar", "summary"],
@@ -120,8 +121,8 @@ export default function Radar() {
     refetchInterval: (q) => (Date.now() < welcomeUntil && !q.state.data?.active ? 2500 : false),
   });
   const list = useQuery({
-    queryKey: ["radar", "list", view, sort, sector, page],
-    queryFn: () => api.get<Page<Opportunity>>("/radar", { view, sort, sector, page }),
+    queryKey: ["radar", "list", view, sort, sector, kind, page],
+    queryFn: () => api.get<Page<Opportunity>>("/radar", { view, sort, sector, kind, page }),
     placeholderData: keepPreviousData,
     refetchInterval: (q) => (Date.now() < welcomeUntil && !q.state.data?.total ? 2500 : false),
   });
@@ -255,6 +256,16 @@ export default function Radar() {
         <div className="radar-toolbar">
           <Tabs tabs={tabs} value={view} onChange={setView} />
           <div className="row" style={{ gap: 10 }}>
+            <Select value={kind} onChange={(e) => setKind(e.target.value)} aria-label="Type d'offre" className="sort-select">
+              <option value="">Tous types</option>
+              {taxonomy?.opportunity_kinds
+                .filter((k) => k.value !== "other")
+                .map((k) => (
+                  <option key={k.value} value={k.value}>
+                    {k.label}
+                  </option>
+                ))}
+            </Select>
             <Select value={sector} onChange={(e) => setSector(e.target.value)} aria-label="Secteur" className="sort-select">
               <option value="">Tous secteurs</option>
               {taxonomy?.sectors.map((s) => (

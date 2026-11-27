@@ -376,6 +376,61 @@ _DEMO: list[tuple[str, str, str, str, int | None, str | None, int | None, int, s
 ]
 
 
+# Offres d'emploi fictives : (poste, employeur, ville, contrat, niveau, télétravail, jours avant la date limite,
+# jours depuis la publication, détails)
+_DEMO_JOBS: list[tuple[str, str, str, str, str, bool, int | None, int, str]] = [
+    (
+        "Développeur·se full stack React / Python",
+        "Studio numérique Teranga (démo)",
+        "Dakar",
+        "cdi",
+        "intermediaire",
+        True,
+        21,
+        2,
+        "Au sein d'une équipe de six personnes, tu conçois et fais évoluer nos applications web et mobiles : React, "
+        "TypeScript, Python (FastAPI), PostgreSQL. 3 à 5 ans d'expérience, à l'aise avec les API et le déploiement. "
+        "Télétravail possible deux jours par semaine.",
+    ),
+    (
+        "Stage : assistant·e communication digitale (6 mois)",
+        "ONG Santé pour tous (démo)",
+        "Thiès",
+        "stage",
+        "debutant",
+        False,
+        14,
+        1,
+        "Stage de fin d'études : animation des réseaux sociaux, rédaction de contenus, appui à la production de "
+        "vidéos de sensibilisation. Étudiant·e en communication ou marketing digital. Indemnité de stage.",
+    ),
+    (
+        "Data analyst junior, suivi-évaluation",
+        "Programme régional de résilience (démo)",
+        "Dakar",
+        "cdd",
+        "debutant",
+        False,
+        10,
+        4,
+        "Contrat de 12 mois renouvelable. Collecte et analyse de données de terrain, tableaux de bord Power BI, "
+        "appui au suivi-évaluation. Maîtrise d'Excel, de Python ou R appréciée. 0 à 2 ans d'expérience.",
+    ),
+    (
+        "Mission freelance : refonte du site web et SEO",
+        "Coopérative des femmes transformatrices (démo)",
+        "Kaolack",
+        "freelance",
+        "intermediaire",
+        True,
+        9,
+        3,
+        "Mission de deux mois : refonte du site vitrine, boutique en ligne simple avec paiement Wave et Orange Money, "
+        "optimisation du référencement. Travail à distance possible, une visite sur place au lancement.",
+    ),
+]
+
+
 class DemoAdapter:
     kind: ClassVar[str] = "demo"
     label: ClassVar[str] = "Données de démonstration"
@@ -404,6 +459,29 @@ class DemoAdapter:
                     kind=kind,
                     budget_amount=amount,
                     budget_currency=currency,
+                    is_demo=True,
+                )
+            )
+        for index, (title, issuer, city, contract, level, remote, due, published, details) in enumerate(
+            _DEMO_JOBS
+        ):
+            deadline = now + timedelta(days=due) if due is not None else None
+            items.append(
+                RawOpportunity(
+                    external_id=f"demo-job-{index:03d}",
+                    title=title,
+                    issuer=issuer,
+                    url="",
+                    description=details,
+                    country="SN",
+                    published_at=now - timedelta(days=published),
+                    deadline_at=deadline,
+                    kind="job",
+                    contract_type=contract,
+                    experience_level=level,
+                    location=city,
+                    remote=remote,
+                    apply_info="Envoyer CV et lettre de motivation à recrutement@exemple.sn (adresse fictive).",
                     is_demo=True,
                 )
             )

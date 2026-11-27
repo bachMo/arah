@@ -1,7 +1,8 @@
-"""Référentiels partagés : secteurs, pays, types de structures et de pièces administratives."""
+"""Référentiels partagés : secteurs, pays, types de structures, contrats et pièces administratives."""
 
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass
 
 from app.core.text import contains_term, normalize
@@ -403,8 +404,34 @@ OPPORTUNITY_KINDS: dict[str, str] = {
     "grant": "Financement / subvention",
     "competition": "Concours / prix",
     "program": "Programme / incubation",
+    "job": "Offre d'emploi",
     "other": "Autre",
 }
+
+PROFILE_KINDS: dict[str, str] = {
+    "organization": "Je représente une structure",
+    "candidate": "Je cherche un emploi, un stage ou une mission",
+}
+
+CONTRACT_TYPES: dict[str, str] = {
+    "cdi": "CDI",
+    "cdd": "CDD",
+    "freelance": "Freelance / mission",
+    "stage": "Stage",
+    "alternance": "Alternance",
+    "volontariat": "Volontariat",
+}
+
+EXPERIENCE_LEVELS: dict[str, str] = {
+    "debutant": "Débutant (0 à 2 ans)",
+    "intermediaire": "Intermédiaire (3 à 5 ans)",
+    "confirme": "Confirmé (6 à 10 ans)",
+    "expert": "Expert (plus de 10 ans)",
+}
+EXPERIENCE_ORDER = list(EXPERIENCE_LEVELS)
+
+# Types d'offres proposés par défaut à un profil candidat.
+CANDIDATE_DEFAULT_KINDS = ["job", "competition", "program"]
 
 DOC_TYPES: dict[str, str] = {
     "ninea": "NINEA",
@@ -501,6 +528,71 @@ def detect_documents(text: str) -> list[str]:
     ]
 
 
+# Contrat : l'ordre compte, du plus spécifique au plus général.
+_CONTRACT_RULES: list[tuple[str, tuple[str, ...]]] = [
+    ("stage", ("stage", "stagiaire", "internship", "intern ", "stage de fin d'etudes")),
+    ("alternance", ("alternance", "alternant", "apprentissage", "apprenti")),
+    ("volontariat", ("volontariat", "volontaire", "volunteer", "vnu", "unv", "service civique")),
+    (
+        "freelance",
+        ("freelance", "free-lance", "consultance", "consultancy", "independant", "mission ponctuelle"),
+    ),
+    (
+        "cdd",
+        (
+            "cdd",
+            "contrat a duree determinee",
+            "duree determinee",
+            "fixed-term",
+            "fixed term",
+            "temporary appointment",
+            "temporaire",
+        ),
+    ),
+    ("cdi", ("cdi", "contrat a duree indeterminee", "duree indeterminee", "permanent", "full-time position")),
+]
+
+_YEARS = re.compile(r"(\d{1,2})\s*(?:\+\s*)?(?:ans|annees|years?)\b(?:\s+(?:d'|of\s+)?(?:experience|exp))?")
+
+
+def detect_contract(text: str) -> str | None:
+    norm = normalize(text)
+    for slug, terms in _CONTRACT_RULES:
+        if any(contains_term(norm, t.strip()) for t in terms):
+            return slug
+    return None
+
+
+def detect_experience(text: str) -> str | None:
+    norm = normalize(text)
+    years = [int(m.group(1)) for m in _YEARS.finditer(norm) if "experience" in norm[m.start() : m.end() + 40]]
+    if years:
+        y = min(years)
+        return "debutant" if y <= 2 else "intermediaire" if y <= 5 else "confirme" if y <= 10 else "expert"
+    if any(
+        contains_term(norm, t) for t in ("debutant", "junior", "jeune diplome", "entry level", "entry-level")
+    ):
+        return "debutant"
+    if any(contains_term(norm, t) for t in ("senior", "expert", "principal")):
+        return "confirme"
+    return None
+
+
+def detect_remote(text: str) -> bool:
+    norm = normalize(text)
+    return any(
+        contains_term(norm, t)
+        for t in ("teletravail", "a distance", "full remote", "remote", "home-based", "home based")
+    )
+
+
+def experience_gap(required: str | None, own: str | None) -> int:
+    """Écart entre l'expérience demandée et celle du candidat (positif si l'offre en demande plus)."""
+    if required not in EXPERIENCE_ORDER or own not in EXPERIENCE_ORDER:
+        return 0
+    return EXPERIENCE_ORDER.index(required) - EXPERIENCE_ORDER.index(own)
+
+
 def sector_label(slug: str) -> str:
     sector = SECTOR_BY_SLUG.get(slug)
     return sector.label if sector else slug
@@ -519,5 +611,8 @@ def taxonomy_payload() -> dict[str, object]:
         "countries": [{"value": c.code, "label": c.label} for c in COUNTRIES],
         "org_types": [{"value": k, "label": v} for k, v in ORG_TYPES.items()],
         "opportunity_kinds": [{"value": k, "label": v} for k, v in OPPORTUNITY_KINDS.items()],
+        "profile_kinds": [{"value": k, "label": v} for k, v in PROFILE_KINDS.items()],
+        "contract_types": [{"value": k, "label": v} for k, v in CONTRACT_TYPES.items()],
+        "experience_levels": [{"value": k, "label": v} for k, v in EXPERIENCE_LEVELS.items()],
         "doc_types": [{"value": k, "label": v} for k, v in DOC_TYPES.items()],
     }

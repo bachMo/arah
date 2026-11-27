@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Play, Plus, Trash2 } from "lucide-react";
 import { useState, type FormEvent } from "react";
 import { Link } from "react-router-dom";
+import { SubmissionQueue } from "../components/SubmissionQueue";
 import { Button, Field, Input, Notice, Select, Skeleton, Textarea, Toggle } from "../components/ui";
 import { api, errorMessage } from "../lib/api";
 import { formatNumber, relativeTime } from "../lib/format";
@@ -100,6 +101,7 @@ export default function Admin() {
             Suis l'exécution en direct sur le <Link to="/journal" className="link">journal de l'agent</Link>.
           </Notice>
         )}
+        <SubmissionQueue />
         {!data ? (
           <Skeleton height={400} radius={24} />
         ) : (

@@ -8,15 +8,29 @@ import uuid
 from pydantic import BaseModel, Field, field_validator
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.agent.prompts import KIND_LIST, PROFILE_PROMPT, PROFILE_SYSTEM, SECTOR_LIST
+from app.agent.prompts import (
+    CANDIDATE_PROFILE_PROMPT,
+    CANDIDATE_PROFILE_SYSTEM,
+    KIND_LIST,
+    PROFILE_PROMPT,
+    PROFILE_SYSTEM,
+    SECTOR_LIST,
+)
 from app.core.text import clean_list, normalize, top_terms
+from app.core.text import contains_term as _contains
 from app.llm.service import LLMService, wrap_untrusted
 from app.taxonomy import (
+    _CONTRACT_RULES,
+    CANDIDATE_DEFAULT_KINDS,
+    CONTRACT_TYPES,
     COUNTRY_BY_CODE,
+    EXPERIENCE_LEVELS,
     OPPORTUNITY_KINDS,
     ORG_TYPES,
     SECTOR_BY_SLUG,
     detect_countries,
+    detect_experience,
+    detect_remote,
     detect_sectors,
 )
 
@@ -32,6 +46,11 @@ class ProfileSuggestion(BaseModel):
     opportunity_kinds: list[str] = Field(default_factory=list)
     budget_min: int | None = None
     budget_max: int | None = None
+    profile_kind: str = "organization"
+    job_title: str = ""
+    contract_types: list[str] = Field(default_factory=list)
+    experience_level: str | None = None
+    remote_ok: bool = False
     method: str = "règles"
 
     @field_validator("budget_min", "budget_max", mode="before")
@@ -55,6 +74,14 @@ class ProfileSuggestion(BaseModel):
                 "keywords_include": clean_list(self.keywords_include, limit=15, max_len=60),
                 "keywords_exclude": clean_list(self.keywords_exclude, limit=10, max_len=60),
                 "opportunity_kinds": [k for k in self.opportunity_kinds if k in OPPORTUNITY_KINDS],
+                "profile_kind": self.profile_kind
+                if self.profile_kind in {"organization", "candidate"}
+                else "organization",
+                "job_title": self.job_title.strip()[:160],
+                "contract_types": [c for c in dict.fromkeys(self.contract_types) if c in CONTRACT_TYPES],
+                "experience_level": self.experience_level
+                if self.experience_level in EXPERIENCE_LEVELS
+                else None,
             }
         )
 
@@ -93,9 +120,76 @@ def suggest_with_rules(description: str) -> ProfileSuggestion:
     ).sanitized()
 
 
+_JOB_TITLE = re.compile(
+    r"(?:je suis|je travaille comme|je cherche (?:un poste|un emploi|une mission|un stage)(?: de| d'| en| comme)?|"
+    r"poste de|métier de)\s+(?:un |une |)([a-zà-ÿ][a-zà-ÿ' \-/]{2,60}?)(?:[,.;]| à | en | avec | depuis | et |$)"
+)
+
+# Mots trop généraux pour servir de compétences ou de mots-clés.
+_CANDIDATE_NOISE = {
+    "suis",
+    "cherche",
+    "recherche",
+    "poste",
+    "emploi",
+    "stage",
+    "mission",
+    "missions",
+    "freelance",
+    "junior",
+    "senior",
+    "dakar",
+    "senegal",
+    "travail",
+    "teletravail",
+    "possible",
+    "experience",
+    "annees",
+    "ans",
+    "cdi",
+    "cdd",
+    "contrat",
+    "actuellement",
+    "depuis",
+    "souhaite",
+    "aimerais",
+    "passionne",
+    "passionnee",
+}
+
+
+def suggest_candidate_with_rules(description: str) -> ProfileSuggestion:
+    norm = normalize(description)
+    title = _JOB_TITLE.search(description.lower())
+    contracts = [slug for slug, terms in _CONTRACT_RULES if any(_contains(norm, t.strip()) for t in terms)]
+    job_title = title.group(1).strip() if title else ""
+    title_words = set(normalize(job_title).split())
+    terms = [t for t in top_terms(description, 20) if t not in _CANDIDATE_NOISE and t not in title_words][:10]
+    return ProfileSuggestion(
+        profile_kind="candidate",
+        job_title=job_title,
+        sectors=detect_sectors(description, limit=4),
+        skills=terms[:8],
+        countries=[c for c in detect_countries(description) if c != "INT"] or ["SN"],
+        keywords_include=terms[:5],
+        contract_types=contracts,
+        experience_level=detect_experience(description),
+        remote_ok=detect_remote(description),
+        opportunity_kinds=list(CANDIDATE_DEFAULT_KINDS),
+        method="règles",
+    ).sanitized()
+
+
 async def suggest_profile(
-    session: AsyncSession, llm: LLMService, description: str, *, user_id: uuid.UUID | None
+    session: AsyncSession,
+    llm: LLMService,
+    description: str,
+    *,
+    user_id: uuid.UUID | None,
+    profile_kind: str = "organization",
 ) -> ProfileSuggestion:
+    if profile_kind == "candidate":
+        return await _suggest_candidate(session, llm, description, user_id=user_id)
     if llm.enabled:
         prompt = PROFILE_PROMPT.format(
             org_types=", ".join(ORG_TYPES),
@@ -117,3 +211,35 @@ async def suggest_profile(
         if data is not None:
             return data.model_copy(update={"method": f"IA · {llm.model_for('fast')}"}).sanitized()
     return suggest_with_rules(description)
+
+
+async def _suggest_candidate(
+    session: AsyncSession, llm: LLMService, description: str, *, user_id: uuid.UUID | None
+) -> ProfileSuggestion:
+    if llm.enabled:
+        prompt = CANDIDATE_PROFILE_PROMPT.format(
+            sectors=SECTOR_LIST,
+            countries=", ".join(COUNTRY_BY_CODE),
+            contracts=", ".join(CONTRACT_TYPES),
+            levels=", ".join(EXPERIENCE_LEVELS),
+            content=wrap_untrusted("parcours", description, 6000),
+        )
+        data = await llm.complete_json(
+            session,
+            purpose="profile",
+            system=CANDIDATE_PROFILE_SYSTEM,
+            prompt=prompt,
+            schema=ProfileSuggestion,
+            tier="fast",
+            max_tokens=900,
+            user_id=user_id,
+        )
+        if data is not None:
+            return data.model_copy(
+                update={
+                    "profile_kind": "candidate",
+                    "opportunity_kinds": list(CANDIDATE_DEFAULT_KINDS),
+                    "method": f"IA · {llm.model_for('fast')}",
+                }
+            ).sanitized()
+    return suggest_candidate_with_rules(description)

@@ -2,7 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { BellRing, Download, KeyRound, MessageCircle, Save, Trash2, UserRound } from "lucide-react";
 import { useEffect, useState, type FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
-import { EMPTY_PROFILE, ProfileForm } from "../components/ProfileForm";
+import { EMPTY_PROFILE, ProfileForm, ProfileKindPicker, switchProfileKind } from "../components/ProfileForm";
 import { Button, Field, Input, Notice, Select, Skeleton, Tabs, Toggle } from "../components/ui";
 import { api, ApiError, errorMessage } from "../lib/api";
 import { useAuth } from "../lib/auth";
@@ -40,6 +40,7 @@ function ProfileTab() {
         save.mutate();
       }}
     >
+      <ProfileKindPicker value={profile.profile_kind} onChange={(kind) => setProfile((p) => switchProfileKind(p, kind))} />
       <ProfileForm value={profile} onChange={setProfile} errors={save.error instanceof ApiError ? save.error.fields : {}} />
       <div className="sticky-save">
         <Button type="submit" variant="signal" icon={<Save />} loading={save.isPending}>

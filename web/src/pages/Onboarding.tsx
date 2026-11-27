@@ -3,7 +3,7 @@ import clsx from "clsx";
 import { ArrowLeft, ArrowRight, Check, MailWarning, PenLine, Sparkles } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { EMPTY_PROFILE, ProfileForm } from "../components/ProfileForm";
+import { EMPTY_PROFILE, ProfileForm, ProfileKindPicker, switchProfileKind } from "../components/ProfileForm";
 import { Button, Field, Notice, Textarea } from "../components/ui";
 import { api, ApiError, errorMessage } from "../lib/api";
 import { useAuth } from "../lib/auth";
@@ -11,10 +11,14 @@ import { useConfig, useDocumentTitle } from "../lib/hooks";
 import { useToast } from "../lib/toast";
 import type { AlertSettings, Profile, ProfileSuggestion } from "../lib/types";
 
-const EXAMPLE =
-  "Je suis développeur freelance à Dakar. Je crée des sites web, des applications mobiles et des chatbots pour des PME et des ONG, surtout dans l'agriculture et la santé. Je peux gérer des projets jusqu'à 50 millions de F CFA au Sénégal et dans la sous-région.";
+const EXAMPLES = {
+  organization:
+    "Je suis développeur freelance à Dakar. Je crée des sites web, des applications mobiles et des chatbots pour des PME et des ONG, surtout dans l'agriculture et la santé. Je peux gérer des projets jusqu'à 50 millions de F CFA au Sénégal et dans la sous-région.",
+  candidate:
+    "Je suis comptable avec 4 ans d'expérience dans un cabinet à Dakar (OHADA, déclarations fiscales, Sage). Je cherche un CDI ou un CDD dans une entreprise ou une ONG, au Sénégal. J'accepte aussi des missions freelance.",
+};
 
-const STEPS = ["Ton activité", "Ton profil", "Tes alertes"];
+const STEPS = ["Toi", "Ton profil", "Tes alertes"];
 
 export default function Onboarding() {
   useDocumentTitle("Bienvenue");
@@ -41,7 +45,7 @@ export default function Onboarding() {
   }, [existing.data]);
 
   const suggest = useMutation({
-    mutationFn: () => api.post<ProfileSuggestion>("/profile/suggest", { description }),
+    mutationFn: () => api.post<ProfileSuggestion>("/profile/suggest", { description, profile_kind: profile.profile_kind }),
     onSuccess: (s) => {
       const { method: m, ...fields } = s;
       setProfile((p) => ({
@@ -71,7 +75,11 @@ export default function Onboarding() {
     },
   });
   const finishErrors = finish.error instanceof ApiError ? finish.error.fields : {};
-  const canContinue = profile.sectors.length > 0 || profile.skills.length > 0 || profile.keywords_include.length > 0;
+  const isCandidate = profile.profile_kind === "candidate";
+  const example = EXAMPLES[profile.profile_kind];
+  const canContinue = isCandidate
+    ? profile.job_title.trim().length > 0 || profile.skills.length > 0
+    : profile.sectors.length > 0 || profile.skills.length > 0 || profile.keywords_include.length > 0;
 
   return (
     <div className="page onboarding">
@@ -96,17 +104,20 @@ export default function Onboarding() {
           <section className="onboarding-card card card-pad">
             <span className="eyebrow">Étape 1</span>
             <h1 className="onboarding-title">
-              Raconte-nous ce que tu fais, <span className="serif">en quelques phrases.</span>
+              Que cherches-tu <span className="serif">sur Arah! ?</span>
             </h1>
+            <ProfileKindPicker value={profile.profile_kind} onChange={(kind) => setProfile((p) => switchProfileKind(p, kind))} />
             <p className="muted">
-              Ton métier, tes clients, tes secteurs, où tu interviens, les montants que tu peux porter.
+              {isCandidate
+                ? "Raconte ton parcours en quelques phrases : ton métier, ton expérience, les contrats que tu cherches, où tu veux travailler."
+                : "Raconte ce que tu fais en quelques phrases : ton métier, tes clients, tes secteurs, où tu interviens, les montants que tu peux porter."}
               {config?.llm.enabled ? " L'agent remplit ton profil, tu corriges." : " On en déduit un premier profil, tu corriges."}
             </p>
-            <Field label="Ton activité" htmlFor="desc" hint={`${description.length} / 6000 caractères`}>
-              <Textarea id="desc" value={description} onChange={(e) => setDescription(e.target.value)} rows={6} maxLength={6000} placeholder={EXAMPLE} />
+            <Field label={isCandidate ? "Ton parcours" : "Ton activité"} htmlFor="desc" hint={`${description.length} / 6000 caractères`}>
+              <Textarea id="desc" value={description} onChange={(e) => setDescription(e.target.value)} rows={6} maxLength={6000} placeholder={example} />
             </Field>
             {!description && (
-              <button type="button" className="link small" onClick={() => setDescription(EXAMPLE)}>
+              <button type="button" className="link small" onClick={() => setDescription(example)}>
                 Utiliser l'exemple
               </button>
             )}
@@ -149,7 +160,11 @@ export default function Onboarding() {
                 Continuer <ArrowRight />
               </Button>
             </div>
-            {!canContinue && <p className="small muted">Choisis au moins un secteur ou une compétence.</p>}
+            {!canContinue && (
+              <p className="small muted">
+                {isCandidate ? "Indique au moins le métier recherché ou une compétence." : "Choisis au moins un secteur ou une compétence."}
+              </p>
+            )}
           </section>
         )}
 

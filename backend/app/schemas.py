@@ -7,7 +7,15 @@ from typing import Any, Literal
 from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_validator
 
 from app.core.text import clean_list
-from app.taxonomy import COUNTRY_BY_CODE, DOC_TYPES, OPPORTUNITY_KINDS, ORG_TYPES, SECTOR_BY_SLUG
+from app.taxonomy import (
+    CONTRACT_TYPES,
+    COUNTRY_BY_CODE,
+    DOC_TYPES,
+    EXPERIENCE_LEVELS,
+    OPPORTUNITY_KINDS,
+    ORG_TYPES,
+    SECTOR_BY_SLUG,
+)
 
 
 class ORM(BaseModel):
@@ -94,11 +102,31 @@ class ProfileIn(BaseModel):
     keywords_include: list[str] = Field(default_factory=list, max_length=30)
     keywords_exclude: list[str] = Field(default_factory=list, max_length=30)
     certifications: list[str] = Field(default_factory=list, max_length=20)
-    opportunity_kinds: list[str] = Field(default_factory=list, max_length=6)
+    opportunity_kinds: list[str] = Field(default_factory=list, max_length=8)
     budget_min: int | None = Field(default=None, ge=0)
     budget_max: int | None = Field(default=None, ge=0)
     team_size: int | None = Field(default=None, ge=1, le=100000)
     past_references: str = Field(default="", max_length=6000)
+    profile_kind: Literal["organization", "candidate"] = "organization"
+    job_title: str = Field(default="", max_length=160)
+    contract_types: list[str] = Field(default_factory=list, max_length=6)
+    experience_level: str | None = None
+    remote_ok: bool = False
+
+    @field_validator("contract_types")
+    @classmethod
+    def _contracts(cls, value: list[str]) -> list[str]:
+        return _filtered(value, CONTRACT_TYPES)
+
+    @field_validator("experience_level")
+    @classmethod
+    def _level(cls, value: str | None) -> str | None:
+        return value if value in EXPERIENCE_LEVELS else None
+
+    @field_validator("job_title")
+    @classmethod
+    def _title(cls, value: str) -> str:
+        return value.strip()
 
     @field_validator("org_type")
     @classmethod
@@ -132,6 +160,7 @@ class ProfileOut(ProfileIn, ORM):
 
 class DescribeIn(BaseModel):
     description: str = Field(min_length=20, max_length=6000)
+    profile_kind: Literal["organization", "candidate"] = "organization"
 
 
 # --- Offres ---------------------------------------------------------------------------------------
@@ -168,6 +197,10 @@ class OpportunityOut(ORM):
     published_at: datetime | None
     deadline_at: datetime | None
     is_demo: bool
+    contract_type: str | None = None
+    experience_level: str | None = None
+    location: str = ""
+    remote: bool = False
     source: SourceBrief
     match: MatchOut | None = None
 
@@ -179,6 +212,7 @@ class OpportunityDetail(OpportunityOut):
     keywords: list[str]
     language: str
     enrichment_method: str
+    apply_info: str = ""
     has_preparation: bool = False
 
 

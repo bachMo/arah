@@ -4,8 +4,8 @@
 
 **Les opportunités passent. Arah! les guette pour toi.**
 
-Plateforme gratuite et open source de veille d'appels d'offres, de financements, de concours et de programmes,
-pensée pour les PME, freelances, ONG et startups d'Afrique de l'Ouest francophone.
+Plateforme gratuite et open source de veille d'appels d'offres, de financements, de concours, de programmes et
+d'offres d'emploi, pensée pour les PME, freelances, ONG, startups et candidats d'Afrique de l'Ouest francophone.
 
 [Fonctionnalités](#fonctionnalités) · [Démarrage rapide](#démarrage-rapide) · [Configuration](#configuration) · [Déploiement](#déploiement) · [Contribuer](CONTRIBUTING.md)
 
@@ -21,13 +21,15 @@ prévient par e-mail et aide à préparer la réponse. Il ne fait jamais rien d'
 
 | | |
 |---|---|
-| **Profil d'activité** | Saisi en quelques clics, ou pré-rempli par l'agent à partir d'une description libre. |
-| **Veille quotidienne** | Le Veilleur parcourt les sources chaque matin (Banque mondiale, flux RSS, sources communautaires), écarte doublons et offres closes. |
+| **Profil d'activité** | Structure ou candidat, saisi en quelques clics ou pré-rempli par l'agent à partir d'une description libre. |
+| **Veille quotidienne** | Le Veilleur parcourt les sources chaque matin (Banque mondiale, ReliefWeb, flux RSS, sources communautaires), écarte doublons et offres closes. |
+| **Offres d'emploi** | CDI, CDD, stage, alternance, freelance, volontariat : notées selon le métier, les compétences, le contrat, le niveau et le télétravail. |
+| **Publication par les recruteurs** | Formulaire « Publier une offre », validation par un administrateur, puis proposition immédiate aux candidats qui correspondent. |
 | **Fiche et score** | L'Analyste résume chaque offre (objet, émetteur, montant, date limite, pièces) et calcule un score sur 100 avec ses raisons, les conditions remplies et les risques. |
 | **Mon radar** | Offres triées par score ou date limite, statuts (à voir, intéressé, en préparation, envoyé, gagné, perdu), météo des dates limites. |
 | **Avis** | « Pertinent » ou « Pas pour moi » : le tri s'ajuste aux préférences de chacun. |
 | **Alertes et rappels** | Résumé quotidien ou hebdomadaire par e-mail, rappels J-7, J-3 et J-1. Module WhatsApp complet, activable d'un réglage. |
-| **Aide à la réponse** | Le Rédacteur lit l'avis (et le dossier PDF s'il est fourni) : matrice d'exigences, pièces à réunir, plan, lettre de soumission. Brouillon modifiable, enregistré automatiquement, exportable. |
+| **Aide à la réponse** | Le Rédacteur lit l'avis (et le dossier PDF s'il est fourni) : matrice d'exigences, pièces à réunir, plan, lettre de soumission, ou lettre de motivation pour un poste. Brouillon modifiable, enregistré automatiquement, exportable. |
 | **Coffre de documents** | NINEA, RCCM, attestations… avec rappels avant expiration. |
 | **Constellation 3D** | Chaque offre est une étoile : proximité = ressemblance, taille = montant, couleur = urgence, profil au centre. Vue 2D sur mobile. |
 | **Observatoire** | Tendances par secteur, émetteurs actifs, montants moyens, mots-clés émergents, et *ce qui te manque* pour répondre à plus d'offres. |
@@ -173,6 +175,16 @@ Le module est prêt mais désactivé (`WHATSAPP_ENABLED=false`). Pour l'activer 
 l'API WhatsApp Cloud, fais approuver deux modèles de message (`arah_digest` avec 3 variables : nombre d'offres,
 titre de la meilleure, lien ; `arah_rappel` avec 3 variables : titre, jours restants, lien), puis renseigne
 `WHATSAPP_TOKEN` et `WHATSAPP_PHONE_NUMBER_ID`. Les utilisateurs pourront alors ajouter leur numéro dans leurs réglages.
+
+### Offres d'emploi ReliefWeb
+
+ReliefWeb (ONU/OCHA) publie les offres d'emploi, de consultance, de stage et de volontariat des ONG et agences de
+l'ONU. Son API demande un identifiant d'application gratuit : fais la demande sur
+[apidoc.reliefweb.int](https://apidoc.reliefweb.int/), puis renseigne `RELIEFWEB_APPNAME`. La source s'ajoute
+automatiquement à la veille suivante.
+
+Un flux RSS d'offres d'emploi s'ajoute aussi depuis l'administration, avec une configuration comme
+`{"kind": "job", "country": "SN", "contract_type": "cdi"}`, à condition que le site autorise sa réutilisation.
 
 ### Connexion avec Google
 

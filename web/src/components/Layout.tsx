@@ -11,11 +11,21 @@ import { ButtonLink } from "./ui";
 
 const NAV = [
   { to: "/explorer", label: "Explorer" },
+  { to: "/explorer?type=job", label: "Emplois" },
   { to: "/constellation", label: "Constellation" },
   { to: "/observatoire", label: "Observatoire" },
   { to: "/journal", label: "Journal de l'agent" },
   { to: "/soutenir", label: "Soutenir" },
 ];
+
+/** « Explorer » et « Emplois » partagent la même page : on les distingue par le filtre de type. */
+function isNavActive(to: string, pathname: string, search: string): boolean {
+  const [path, query] = to.split("?");
+  if (pathname !== path && !pathname.startsWith(`${path}/`)) return false;
+  const jobs = new URLSearchParams(search).get("type") === "job";
+  if (path !== "/explorer") return true;
+  return query ? jobs : !jobs;
+}
 
 function UserMenu() {
   const { user, logout } = useAuth();
@@ -88,7 +98,7 @@ function Header() {
   const location = useLocation();
   const navigate = useNavigate();
 
-  useEffect(() => setOpen(false), [location.pathname]);
+  useEffect(() => setOpen(false), [location.pathname, location.search]);
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 8);
     onScroll();
@@ -110,9 +120,13 @@ function Header() {
         </Link>
         <nav className="main-nav" aria-label="Navigation principale">
           {NAV.map((item) => (
-            <NavLink key={item.to} to={item.to} className={({ isActive }) => clsx("nav-link", isActive && "is-active")}>
+            <Link
+              key={item.to}
+              to={item.to}
+              className={clsx("nav-link", isNavActive(item.to, location.pathname, location.search) && "is-active")}
+            >
               {item.label}
-            </NavLink>
+            </Link>
           ))}
         </nav>
         <div className="header-actions">
@@ -153,10 +167,17 @@ function Header() {
               </NavLink>
             )}
             {NAV.map((item) => (
-              <NavLink key={item.to} to={item.to} className="mobile-link">
+              <Link
+                key={item.to}
+                to={item.to}
+                className={clsx("mobile-link", isNavActive(item.to, location.pathname, location.search) && "active")}
+              >
                 {item.label}
-              </NavLink>
+              </Link>
             ))}
+            <NavLink to="/publier-une-offre" className="mobile-link">
+              Publier une offre d'emploi
+            </NavLink>
             {user && (
               <>
                 <NavLink to="/coffre" className="mobile-link">
@@ -211,8 +232,8 @@ function Footer() {
         <div className="footer-brand">
           <Logo size={30} />
           <p className="muted">
-            La veille d'appels d'offres, de financements et de concours, gratuite et open source. Pensée à Dakar pour
-            les PME, freelances, ONG et startups d'Afrique de l'Ouest.
+            La veille d'appels d'offres, de financements, de concours et d'offres d'emploi, gratuite et open source.
+            Pensée à Dakar pour les PME, freelances, ONG, startups et candidats d'Afrique de l'Ouest.
           </p>
           <a className="btn btn-ghost btn-sm" href={github} target="_blank" rel="noreferrer">
             <GithubIcon /> Code source
@@ -221,6 +242,8 @@ function Footer() {
         <div>
           <h4 className="footer-title">Explorer</h4>
           <Link to="/explorer">Toutes les offres</Link>
+          <Link to="/explorer?type=job">Offres d'emploi</Link>
+          <Link to="/publier-une-offre">Publier une offre d'emploi</Link>
           <Link to="/constellation">Constellation 3D</Link>
           <Link to="/observatoire">Observatoire du marché</Link>
           <Link to="/journal">Journal de l'agent</Link>

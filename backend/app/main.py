@@ -11,7 +11,7 @@ from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.responses import JSONResponse
 
 from app.agent.pipeline import ensure_sources
-from app.api import account, admin, auth, opportunities, prepare, profile, public, radar, transparency
+from app.api import account, admin, auth, jobs, opportunities, prepare, profile, public, radar, transparency
 from app.core.config import get_settings
 from app.core.db import SessionLocal, engine
 from app.core.logging import setup_logging
@@ -100,7 +100,7 @@ def create_app() -> FastAPI:
         first = errors[0]["message"] if errors else "Données invalides."
         return JSONResponse({"detail": first, "errors": errors}, status.HTTP_422_UNPROCESSABLE_CONTENT)
 
-    for module in (public, auth, profile, opportunities, radar, prepare, account, transparency, admin):
+    for module in (public, auth, profile, opportunities, radar, prepare, account, transparency, admin, jobs):
         app.include_router(module.router, prefix="/api")
     return app
 

@@ -1,6 +1,7 @@
+import { BriefcaseBusiness, Building2 } from "lucide-react";
 import { useTaxonomy } from "../lib/hooks";
-import type { Profile } from "../lib/types";
-import { ChipGroup, Field, Input, Select, TagInput, Textarea } from "./ui";
+import type { Profile, ProfileKind } from "../lib/types";
+import { ChipGroup, Field, Input, Select, TagInput, Textarea, Toggle } from "./ui";
 
 export const EMPTY_PROFILE: Profile = {
   organization_name: "",
@@ -17,7 +18,43 @@ export const EMPTY_PROFILE: Profile = {
   budget_max: null,
   team_size: null,
   past_references: "",
+  profile_kind: "organization",
+  job_title: "",
+  contract_types: [],
+  experience_level: null,
+  remote_ok: false,
 };
+
+/** Types d'offres proposés par défaut à un candidat (identiques au serveur). */
+export const CANDIDATE_KINDS = ["job", "competition", "program"];
+
+/** Passe d'un type de profil à l'autre en gardant ce qui reste valable. */
+export function switchProfileKind(profile: Profile, kind: ProfileKind): Profile {
+  if (profile.profile_kind === kind) return profile;
+  return {
+    ...profile,
+    profile_kind: kind,
+    opportunity_kinds: kind === "candidate" ? CANDIDATE_KINDS : profile.opportunity_kinds.filter((k) => k !== "job"),
+  };
+}
+
+export function ProfileKindPicker({ value, onChange }: { value: ProfileKind; onChange: (kind: ProfileKind) => void }) {
+  const choices: [ProfileKind, typeof Building2, string, string][] = [
+    ["organization", Building2, "Je représente une structure", "Entreprise, freelance, ONG, startup, coopérative : appels d'offres et financements."],
+    ["candidate", BriefcaseBusiness, "Je cherche un emploi", "CDI, CDD, stage, alternance, mission freelance ou volontariat."],
+  ];
+  return (
+    <div className="choice-grid choice-grid-2" role="group" aria-label="Type de profil">
+      {choices.map(([kind, Icon, title, text]) => (
+        <button key={kind} type="button" className="choice choice-icon" aria-pressed={value === kind} onClick={() => onChange(kind)}>
+          <Icon aria-hidden />
+          <strong>{title}</strong>
+          <span>{text}</span>
+        </button>
+      ))}
+    </div>
+  );
+}
 
 function MoneyInput({ value, onChange, id }: { value: number | null; onChange: (v: number | null) => void; id: string }) {
   return (
@@ -50,6 +87,10 @@ export function ProfileForm({
 }) {
   const { data: taxonomy } = useTaxonomy();
   const set = <K extends keyof Profile>(key: K, v: Profile[K]) => onChange({ ...value, [key]: v });
+
+  if (value.profile_kind === "candidate") {
+    return <CandidateForm value={value} set={set} advanced={advanced} errors={errors} />;
+  }
 
   return (
     <div className="profile-form">
@@ -88,7 +129,7 @@ export function ProfileForm({
         <ChipGroup options={taxonomy?.countries ?? []} value={value.countries} onChange={(v) => set("countries", v)} />
       </Field>
 
-      <Field label="Types d'offres qui t'intéressent" hint="Laisse vide pour tout recevoir.">
+      <Field label="Types d'offres qui t'intéressent" hint="Laisse vide pour tout recevoir, sauf les offres d'emploi.">
         <ChipGroup options={taxonomy?.opportunity_kinds.filter((k) => k.value !== "other") ?? []} value={value.opportunity_kinds} onChange={(v) => set("opportunity_kinds", v)} />
       </Field>
 
@@ -123,6 +164,93 @@ export function ProfileForm({
               />
             </Field>
           </div>
+        </>
+      )}
+    </div>
+  );
+}
+
+type Setter = <K extends keyof Profile>(key: K, v: Profile[K]) => void;
+
+function CandidateForm({
+  value,
+  set,
+  advanced,
+  errors,
+}: {
+  value: Profile;
+  set: Setter;
+  advanced: boolean;
+  errors: Record<string, string>;
+}) {
+  const { data: taxonomy } = useTaxonomy();
+  const kinds = (taxonomy?.opportunity_kinds ?? []).filter((k) => ["job", "competition", "program", "grant", "consultancy"].includes(k.value));
+  return (
+    <div className="profile-form">
+      <div className="form-grid">
+        <Field label="Ton nom" htmlFor="name">
+          <Input id="name" value={value.organization_name} onChange={(e) => set("organization_name", e.target.value)} placeholder="Ex. Awa Ndiaye" />
+        </Field>
+        <Field label="Métier ou poste recherché" htmlFor="jobtitle" error={errors.job_title}>
+          <Input id="jobtitle" value={value.job_title} onChange={(e) => set("job_title", e.target.value)} placeholder="Ex. développeuse web, comptable, chargé de communication" />
+        </Field>
+      </div>
+
+      <Field label="Contrats recherchés" hint="Laisse vide pour tout recevoir.">
+        <ChipGroup options={taxonomy?.contract_types ?? []} value={value.contract_types} onChange={(v) => set("contract_types", v)} />
+      </Field>
+
+      <Field label="Ton niveau d'expérience" htmlFor="level">
+        <Select id="level" value={value.experience_level ?? ""} onChange={(e) => set("experience_level", e.target.value || null)}>
+          <option value="">Non précisé</option>
+          {taxonomy?.experience_levels.map((o) => (
+            <option key={o.value} value={o.value}>
+              {o.label}
+            </option>
+          ))}
+        </Select>
+      </Field>
+
+      <Field label="Tes compétences" hint="Appuie sur Entrée après chaque élément. C'est ce qui compte le plus pour le tri.">
+        <TagInput value={value.skills} onChange={(v) => set("skills", v)} placeholder="Ex. React, comptabilité OHADA, Canva, anglais…" />
+      </Field>
+
+      <Field label="Secteurs qui t'intéressent" hint="Facultatif, jusqu'à 6." error={errors.sectors}>
+        <ChipGroup options={taxonomy?.sectors ?? []} value={value.sectors} onChange={(v) => set("sectors", v)} max={6} />
+      </Field>
+
+      <Field label="Pays où tu peux travailler">
+        <ChipGroup options={taxonomy?.countries ?? []} value={value.countries} onChange={(v) => set("countries", v)} />
+      </Field>
+
+      <div className="toggle-row">
+        <div>
+          <strong>J'accepte le télétravail</strong>
+          <span className="small muted">Les postes à distance te seront proposés, quel que soit le pays.</span>
+        </div>
+        <Toggle label="J'accepte le télétravail" checked={value.remote_ok} onChange={(v) => set("remote_ok", v)} />
+      </div>
+
+      <Field label="Mots-clés à exclure" hint="Les offres qui les contiennent ne te seront jamais proposées.">
+        <TagInput value={value.keywords_exclude} onChange={(v) => set("keywords_exclude", v)} placeholder="Ex. commercial terrain, travail de nuit…" tone="danger" />
+      </Field>
+
+      <Field label="À recevoir aussi" hint="Les offres d'emploi sont toujours incluses.">
+        <ChipGroup
+          options={kinds}
+          value={value.opportunity_kinds.length ? value.opportunity_kinds : CANDIDATE_KINDS}
+          onChange={(v) => set("opportunity_kinds", v.includes("job") ? v : ["job", ...v])}
+        />
+      </Field>
+
+      {advanced && (
+        <>
+          <Field label="Ton parcours" hint="Formation, expériences, ce que tu cherches. Utilisé par le Rédacteur pour tes lettres de motivation.">
+            <Textarea value={value.description} onChange={(e) => set("description", e.target.value)} rows={4} maxLength={6000} />
+          </Field>
+          <Field label="Expériences marquantes" hint="Postes, missions, résultats. Une par ligne.">
+            <Textarea value={value.past_references} onChange={(e) => set("past_references", e.target.value)} rows={4} maxLength={6000} />
+          </Field>
         </>
       )}
     </div>

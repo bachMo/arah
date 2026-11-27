@@ -34,6 +34,7 @@ export type TargetInfo = {
   node?: StarNode;
   members?: number;
   best?: number | null;
+  planets?: Destination[];
 };
 
 export type Destination = {
@@ -90,6 +91,8 @@ type GalaxyRec = {
   members: number;
   best: number | null;
   label: HTMLDivElement;
+  planets: Destination[];
+  recs: PlanetRec[];
 };
 
 const HUES = ["#7aa2ff", "#c792ea", "#5eead4", "#fbbf24", "#f472b6", "#60a5fa", "#a3e635", "#fb923c"];
@@ -467,6 +470,7 @@ export function createUniverse(
   };
   const ordered = [...groups.entries()].sort((a, b) => relevance(b[1]) - relevance(a[1]));
   const galaxies: GalaxyRec[] = [];
+  const galaxyHits: THREE.Mesh[] = [];
   const golden = Math.PI * (3 - Math.sqrt(5));
   ordered.forEach(([clusterId, members], rank) => {
     const info = clusterInfo.get(clusterId);
@@ -525,14 +529,32 @@ export function createUniverse(
     const toSun = center.clone().negate().normalize().applyQuaternion(frame.quaternion.clone().invert());
     const base = Math.atan2(toSun.z, toSun.x);
     const sorted = [...members].sort((a, b) => (b.score ?? -1) - (a.score ?? -1));
+    const galaxyPlanets: Destination[] = [];
+    const galaxyRecs: PlanetRec[] = [];
     sorted.forEach((node, k) => {
+      galaxyPlanets.push({
+        id: node.id,
+        type: "planet",
+        name: node.title,
+        designation: `${designation}-${k + 1}`,
+        score: node.score,
+        urgency: node.urgency,
+      });
       const side = k % 2 === 0 ? 1 : -1;
       const angle = base + side * Math.ceil(k / 2) * (0.5 + 2.2 / Math.max(4, sorted.length));
       const r = radius * (0.92 - (0.55 * k) / Math.max(1, sorted.length));
       const rec = makePlanet(node, planetRadius(node, false), `${designation}-${k + 1}`, false);
+      galaxyRecs.push(rec);
       rec.root.position.set(Math.cos(angle) * r, (rand() - 0.5) * radius * 0.12, Math.sin(angle) * r);
       frame.add(rec.root);
     });
+
+    // Sphère invisible pour viser ou cliquer la galaxie de loin (on ne la touche plus une fois dedans).
+    const hit = new THREE.Mesh(new THREE.SphereGeometry(radius * 1.05, 16, 12), new THREE.MeshBasicMaterial({ visible: false }));
+    hit.position.copy(center);
+    hit.userData.galaxyId = `g${clusterId}`;
+    scene.add(hit);
+    galaxyHits.push(hit);
 
     const best = data.personal ? (sorted[0]?.score ?? null) : null;
     const label = makeLabel(
@@ -541,7 +563,19 @@ export function createUniverse(
       `${designation} · ${members.length} planète${members.length > 1 ? "s" : ""}${best != null ? ` · jusqu'à ${best}/100` : ""}`,
       "u-label-galaxy",
     );
-    galaxies.push({ id: `g${clusterId}`, name, designation, center, radius, disk, members: members.length, best, label });
+    galaxies.push({
+      id: `g${clusterId}`,
+      name,
+      designation,
+      center,
+      radius,
+      disk,
+      members: members.length,
+      best,
+      label,
+      planets: galaxyPlanets,
+      recs: galaxyRecs,
+    });
   });
 
   const galaxyById = new Map(galaxies.map((g) => [g.id, g]));
@@ -617,6 +651,7 @@ export function createUniverse(
         designation: galaxy.designation,
         members: galaxy.members,
         best: galaxy.best,
+        planets: galaxy.planets,
         distance: camera.position.distanceTo(galaxy.center),
       };
     }
@@ -649,11 +684,19 @@ export function createUniverse(
     } else {
       const galaxy = galaxyById.get(id);
       if (!galaxy) return;
-      const dir = from.clone().sub(galaxy.center).normalize().add(new THREE.Vector3(0, 0.45, 0)).normalize();
-      resolve = () => ({
-        position: galaxy.center.clone().addScaledVector(dir, galaxy.radius * 2.1),
-        lookAt: galaxy.center.clone(),
-      });
+      // On plonge dans la galaxie par le côté tourné vers le soleil, un peu au-dessus du disque, en cadrant
+      // à la fois son cœur et ses planètes (ses meilleures offres sont sur ce bord).
+      const focus = galaxy.center.clone();
+      let spread = galaxy.radius;
+      if (galaxy.recs.length) {
+        const centroid = new THREE.Vector3();
+        galaxy.recs.forEach((r) => centroid.add(planetWorld(r)));
+        centroid.divideScalar(galaxy.recs.length);
+        focus.lerp(centroid, 0.6);
+        spread = Math.max(galaxy.radius * 0.6, ...galaxy.recs.map((r) => planetWorld(r).distanceTo(focus)));
+      }
+      const dir = focus.clone().negate().normalize().add(new THREE.Vector3(0, 0.75, 0)).normalize();
+      resolve = () => ({ position: focus.clone().addScaledVector(dir, spread * 2.3 + 12), lookAt: focus.clone() });
       distance = from.distanceTo(galaxy.center);
     }
     const duration = options.reducedMotion ? 0.01 : Math.min(3.2, 0.9 + distance / 260);
@@ -678,8 +721,10 @@ export function createUniverse(
   function pick(ndc: THREE.Vector2): string | null {
     raycaster.setFromCamera(ndc, camera);
     const hit = raycaster.intersectObjects(pickables, false)[0];
-    if (!hit) return null;
-    return hit.object.userData.planetId ?? (hit.object.userData.target === "sun" ? "sun" : null);
+    if (hit) return hit.object.userData.planetId ?? (hit.object.userData.target === "sun" ? "sun" : null);
+    // Une galaxie entière se vise de loin ; une fois à l'intérieur, on vise ses planètes.
+    const far = raycaster.intersectObjects(galaxyHits, false)[0];
+    return far ? (far.object.userData.galaxyId as string) : null;
   }
 
   const canvas = renderer.domElement;
@@ -982,7 +1027,7 @@ export function createUniverse(
     planets.forEach((p) => {
       const world = planetWorld(p, tmp);
       const d = camera.position.distanceTo(world);
-      const range = p.home ? 330 : p.radius * 26 + 40;
+      const range = p.home ? 330 : p.radius * 30 + 90;
       // La planète choisie est décrite par la fiche : son étiquette ferait doublon.
       const visible = p.id !== selectedId && (p.id === hovered || p.id === aimed || d < range);
       const focus = p.id === selectedId || p.id === aimed || p.id === hovered;

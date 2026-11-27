@@ -258,8 +258,8 @@ export function Universe({ data, sunName, onExit }: Props) {
           </span>
           <strong>{aim.name}</strong>
           <small>
-            <span className="u-hint-desktop">Clic ou Entrée pour approcher</span>
-            <span className="u-hint-touch">Touche pour approcher</span>
+            <span className="u-hint-desktop">Clic ou Entrée pour {aim.type === "galaxy" ? "y entrer" : "approcher"}</span>
+            <span className="u-hint-touch">Touche pour {aim.type === "galaxy" ? "y entrer" : "approcher"}</span>
           </small>
         </div>
       )}
@@ -336,7 +336,25 @@ export function Universe({ data, sunName, onExit }: Props) {
                 {selected.members} planète{(selected.members ?? 0) > 1 ? "s" : ""}
                 {selected.best != null ? ` · la plus proche de toi : ${selected.best}/100` : ""}
               </p>
-              <p className="u-card-note">Les offres qui te correspondent le mieux sont sur le bord de la galaxie tourné vers ton soleil.</p>
+              {selected.planets && selected.planets.length > 0 ? (
+                <div className="u-card-planets">
+                  <p className="u-panel-title">Ses planètes</p>
+                  <div className="u-dest-list">
+                    {selected.planets.map((d) => (
+                      <button key={d.id} type="button" className="u-dest" onClick={() => go(d.id)}>
+                        <span className="u-dest-dot" style={{ background: d.urgency ? URGENCY_COLORS[d.urgency] : "#8c8273" }} />
+                        <span className="u-dest-text">
+                          <strong>{d.name}</strong>
+                          <small>{d.designation}</small>
+                        </span>
+                        {d.score != null && <span className="u-dest-score">{d.score}</span>}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              ) : (
+                <p className="u-card-note">Les offres qui te correspondent le mieux sont sur le bord de la galaxie tourné vers ton soleil.</p>
+              )}
               <div className="u-card-actions">
                 <button type="button" className="u-btn" onClick={() => go("sun")}>
                   <Home size={15} /> Retour au soleil

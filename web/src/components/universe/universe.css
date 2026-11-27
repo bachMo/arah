@@ -617,6 +617,18 @@
   color: var(--u-muted);
 }
 
+.u-card-planets {
+  margin: 14px -8px 0;
+}
+
+.u-card-planets .u-panel-title {
+  padding: 0 8px;
+}
+
+.u-card-planets .u-dest-list {
+  max-height: 228px;
+}
+
 .u-card-actions {
   display: flex;
   flex-wrap: wrap;
@@ -832,6 +844,9 @@
   }
   .u-card h2 {
     font-size: 17px;
+  }
+  .u-card-planets .u-dest-list {
+    max-height: 168px;
   }
   .u-legend-grid {
     grid-template-columns: minmax(0, 1fr);

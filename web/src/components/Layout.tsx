@@ -105,7 +105,7 @@ function Header() {
   return (
     <header className={clsx("site-header", scrolled && "is-scrolled", open && "menu-open")}>
       <div className="container header-inner">
-        <Link to={user ? "/radar" : "/"} className="header-logo" aria-label="Arah!, accueil">
+        <Link to="/" className="header-logo" aria-label="Arah!, accueil">
           <Logo />
         </Link>
         <nav className="main-nav" aria-label="Navigation principale">
